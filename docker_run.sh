@@ -7,7 +7,7 @@ function run_docker() {
 		--volume=$PWD:/app \
 		--volume=$CLEVRDIR:/clevr \
 		-e "DISPLAY" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
-		clevr-ir python3 /app/main.py --query-img-index 0 --until-img-index 7 --clevr-dir /clevr --ground-truth $1 --cpus 7
+		clevr-ir python3 /app/main.py --query-img-index 0 --until-img-index 100 --clevr-dir /clevr --ground-truth $1 --cpus 50
 }
 
 if [ -z "$CLEVRDIR" ]; then

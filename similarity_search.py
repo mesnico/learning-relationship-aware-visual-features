@@ -191,7 +191,7 @@ def cache_ged_distances(graphs, query_img_index, node_weight_mode,cpus):
         q = multiprocessing.Queue()
         aggr_dict = {}
         with multiprocessing.Pool(processes=cpus, initializer=ged_parallel_worker_init, initargs=(q,graphs)) as pool:
-            for idx in range(14):#range(len(graphs)):
+            for idx in range(len(graphs)):
                 pool.apply_async(ged_parallel_worker, args=(query_img_index, idx, node_weight_mode))
             
             pool.close()
