@@ -44,6 +44,7 @@ def build_bar_graph(merged_stats, name, max_grouping=False, confidence=0.95):
     error_formatting = dict(elinewidth=1, capsize=2)
     i = 0
     ind = 0
+    feat_sorted_keys = []
     bars = []
     fig, ax = plt.subplots()
     all_means = []
@@ -56,7 +57,8 @@ def build_bar_graph(merged_stats, name, max_grouping=False, confidence=0.95):
         y_errors = []
         #eliminate columns i'm not interested in
         feats = {k:stat[0][k] for k in stat[0] if k not in 'image_id' and k not in 'n_items'}
-        for feat in feats:
+        feats_sorted_keys = sorted(feats)
+        for feat in feats_sorted_keys:
             values = [e[feat] for e in stat]
             #pdb.set_trace()
             mean = np.mean(values)
@@ -72,7 +74,7 @@ def build_bar_graph(merged_stats, name, max_grouping=False, confidence=0.95):
             bars.append(plt.bar(ind+width*i, mean_values, width, color=colors[i], yerr=np.array(y_errors), error_kw=error_formatting))
         i=i+1
         ax.set_xticks(ind)
-        ax.set_xticklabels(feats.keys())
+        ax.set_xticklabels(feats_sorted_keys)
     
     if max_grouping:
         #calculate the best mean for every feat
@@ -80,7 +82,8 @@ def build_bar_graph(merged_stats, name, max_grouping=False, confidence=0.95):
         std_indexes = np.argmax(np.asarray(all_means),0)
         
         chosen_y_error = [all_y_errors[row][col] for col,row in enumerate(std_indexes)]
-        plt.bar(ind, max_mean, width, color=colors[0], yerr=np.array(chosen_y_error), error_kw=error_formatting)
+        shading = [colors[1] if 'g_fc' in f else colors[2] for f in feats_sorted_keys] 
+        plt.bar(ind, max_mean, width, color=shading, yerr=np.array(chosen_y_error), error_kw=error_formatting)
     else:
         ax.legend(bars, list(merged_stats.keys()) )
     ax.set_ylabel('{} index'.format(name))
