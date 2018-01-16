@@ -70,25 +70,22 @@ json_filename = os.path.join(args.clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
 clevr_scenes = json.load(open(json_filename))['scenes']
 graphs = load_graphs(clevr_scenes)
 
-'''filename = os.path.join(features_dirs,'features-g_fc4.pickle')
-fc_features = similarity_search.load_features(filename)
-fc_features = similarity_search.process_fc_features(fc_features)
-filename = os.path.join(features_dirs,'features-conv.pickle')
-conv_features = similarity_search.load_features(filename)
-conv_features = similarity_search.process_conv_features(conv_features)
+feat_filename = os.path.join(features_dirs,'clevr_rmac_features.h5')
+feat_order_filename = os.path.join(features_dirs,'clevr_rmac_features_order.txt')
+rmac_features = fp.load_rmac_features(feat_filename, feat_order_filename)
+rmac_features = fp.process_rmac_features(rmac_features)
 
 #merge fc and conv features
-features = z = {**fc_features, **conv_features}
+features = rmac_features#= {**fc_features, **conv_features}
 
-#if args.cut != -1:
-#    features = np.asarray([features[i][0:args.cut] for i in range(len(features))])
+if args.cut != -1:
+    features = np.asarray([features[i][0:args.cut] for i in range(len(features))])
 
 #print('Features have now shape {}'.format(features.shape))
 
 if args.normalize :
     features = {name:similarity_search.normalized(feat, 1) for name, feat in features.items()}
-#pdb.set_trace()'''
 
 #start
 images_loader = SoCImageLoader(images_dir)
-similarity_search.start(images_loader, args.query_img_index, graphs, args.N, args.ground_truth, args.until_img_index, args.cpus)
+similarity_search.start(images_loader, args.query_img_index, graphs, args.N, args.ground_truth, args.until_img_index, args.cpus, features)

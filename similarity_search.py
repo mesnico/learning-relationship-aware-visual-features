@@ -164,7 +164,9 @@ def compute_ranks(features, graphs, query_img_index, node_weight_mode, cpus):
     stat_indexes = []
 
     if len(features) != 0:
-        max_feats_len = max(map(len, features.values()))
+        #takes the features values
+        lengths = [len(f[0]) for f in features.values()]
+        max_feats_len = max(lengths)
 
         #prepare the axis for computing log-scale recall-at-k.
         log_base = 1.3
@@ -185,8 +187,9 @@ def compute_ranks(features, graphs, query_img_index, node_weight_mode, cpus):
     ''' FEATURES ORDERING '''
     dist_permutations_feats = []
     for name, feat in features.items():
-        query_img_feat = feat[query_img_index]
-        dists = [np.linalg.norm(query_img_feat-i) for i in feat]
+        query_img_feat = feat[0][query_img_index]
+        dist_func = feat[1]
+        dists = [dist_func(query_img_feat,f) for f in feat[0]]
         #cut so that all feats have the same length
         dists = dists[0:max_feats_len]
         permuts = np.argsort(dists)

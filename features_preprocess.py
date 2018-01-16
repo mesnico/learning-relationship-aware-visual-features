@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import h5py
 
 def load_features(filename):
     features = []
@@ -17,13 +18,26 @@ def load_features(filename):
     #print('features loaded from {}'.format(filename))
     return features
 
+def load_rmac_features(feat_filename, feat_order_filename):
+    features = h5py.File(feat_filename, 'r')['/rmac']
+    img_names = open(feat_order_filename, 'r').readlines()
+    
+    assert len(features) == len(img_names)
+
+    #takes only val features
+    filtered = [feat for feat, name in zip(features, img_names) if 'val' in name]
+    return filtered
+
+def process_rmac_features(loaded_features):
+    return {'rmac':(loaded_features, dot_dist)}          
+
 def process_fc_features(loaded_features):
     features = np.vstack(loaded_features)
     max_features = np.amax(features,axis=1)
     avg_features = np.mean(features,axis=1)
 
     print('processed #{} features each of size {}'.format(features.shape[0], features.shape[1]))
-    return {'g_fc4_max':max_features, 'g_fc4_avg':avg_features}
+    return {'g_fc4_max':(max_features, l2_dist), 'g_fc4_avg':(avg_features, l2_dist)}
 
 def process_conv_features(loaded_features):
     global_max = []
@@ -56,10 +70,20 @@ def process_conv_features(loaded_features):
     flatten = np.vstack(flatten)
     subwindow3 = np.vstack(subwindow3)
 
-    return ({'conv_max':global_max, 'conv_avg':global_avg, 'conv_flatten':flatten, 'conv_3x3_max':subwindow3})
-        
+    return ({'conv_max':(global_max, l2_dist), 
+            'conv_avg':(global_avg, l2_dist), 
+            'conv_flatten':(flatten, l2_dist), 
+            'conv_3x3_max':(subwindow3, l2_dist)})
+
+def dot_dist(a,b):
+    a_norm = normalized(a)
+    b_norm = normalized(b)
+    return 1-np.dot(a_norm, b_norm)
+    
+def l2_dist(a,b):
+    return np.linalg.norm(a-b)
 
 def normalized(a, axis=-1, order=2):
     l2 = np.atleast_1d(np.linalg.norm(a, order, axis))
     l2[l2==0] = 1
-    return a / np.expand_dims(l2, axis)
+    return np.squeeze(a / np.expand_dims(l2, axis))

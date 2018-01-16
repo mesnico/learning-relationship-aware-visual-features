@@ -10,6 +10,7 @@ __pycache__/
 .Python
 stats/
 cache/
+features/
 
 env/
 build/
