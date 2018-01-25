@@ -137,22 +137,22 @@ def ged_parallel_worker_init(distances, graphs):
     ged_parallel_worker.distances = distances
     ged_parallel_worker.graphs = graphs
 
-def cache_ged_distances(graphs, query_img_index, node_weight_mode,cpus):
+def cache_ged_distances(graphs, query_img_index, args):
     query_img_graphs = graphs[query_img_index]
-    filename = os.path.join('./cache','graph_distances_queryidx{}_{}.npy'.format(query_img_index,node_weight_mode))
+    filename = os.path.join('./cache','graph_distances_queryidx{}_{}.npy'.format(query_img_index,args.ground_truth))
     n_graphs = len(graphs)
     if os.path.isfile(filename):
-        print('Graph distances file existing for image {}, mode {}! Loading...'.format(query_img_index,node_weight_mode))
+        print('Graph distances file existing for image {}, mode {}! Loading...'.format(query_img_index,args.ground_truth))
         distances = np.memmap(filename, dtype=np.float32, shape=(n_graphs,), mode='r+')
     else:
         distances = np.memmap(filename, dtype=np.float32, shape=(n_graphs,), mode='w+')
         distances[:] = -1
         
-    print('Computing {} graph distances for image {}, mode {};...'.format(len(graphs),query_img_index,node_weight_mode))
+    print('Computing {} graph distances for image {}, mode {};...'.format(len(graphs),query_img_index,args.ground_truth))
     
-    with multiprocessing.Pool(processes=cpus, initializer=ged_parallel_worker_init, initargs=(distances,graphs)) as pool:
+    with multiprocessing.Pool(processes=args.cpus, initializer=ged_parallel_worker_init, initargs=(distances,graphs)) as pool:
         for idx in range(n_graphs):
-            pool.apply_async(ged_parallel_worker, args=(query_img_index, idx, node_weight_mode))
+            pool.apply_async(ged_parallel_worker, args=(query_img_index, idx, args.ground_truth))
         
         pool.close()
         pool.join()
@@ -160,7 +160,7 @@ def cache_ged_distances(graphs, query_img_index, node_weight_mode,cpus):
     distances.flush()
     return distances
 
-def compute_ranks(features, graphs, query_img_index, node_weight_mode, cpus):
+def compute_ranks(features, graphs, query_img_index, args):
     stat_indexes = []
 
     if len(features) != 0:
@@ -178,11 +178,14 @@ def compute_ranks(features, graphs, query_img_index, node_weight_mode, cpus):
     ''' GRAPH DISTANCE ORDERING (GROUND TRUTH)'''
     query_img_graphs = graphs[query_img_index]
     #cut to the same number of features  
-    distances_graphs = cache_ged_distances(graphs, query_img_index, node_weight_mode, cpus)
+    distances_graphs = cache_ged_distances(graphs, query_img_index, args)
     if len(features) != 0:
         distances_graphs = distances_graphs[0:max_feats_len]  
 
     dist_permutations_graphs = np.argsort(distances_graphs)
+    if not args.include_query:
+        #eliminate the query from the set, it must not be in the result
+        dist_permutations_graphs = dist_permutations_graphs[1:]
 
     ''' FEATURES ORDERING '''
     dist_permutations_feats = []
@@ -193,6 +196,10 @@ def compute_ranks(features, graphs, query_img_index, node_weight_mode, cpus):
         #cut so that all feats have the same length
         dists = dists[0:max_feats_len]
         permuts = np.argsort(dists)
+        if not args.include_query:
+            #eliminate the query from the set, it must not be in the result
+            permuts = permuts[1:]
+
         dist_permutations_feats.append({'name':name,'permuts':permuts})
 
         #calculate stats for every conv feature
@@ -236,7 +243,7 @@ def start(images_loader, args, graphs, features = {}):
         print('directory {} already exists'.format(stats_dir))
 
     if not args.until_img_index:
-        results = compute_ranks(features, graphs, args.query_img_index, args.ground_truth, args.cpus)
+        results = compute_ranks(features, graphs, args.query_img_index, args)
         print_stats(results['stat-indexes'],args.query_img_index)
 
         query_img = images_loader.get(args.query_img_index)
@@ -264,7 +271,7 @@ def start(images_loader, args, graphs, features = {}):
             if(args.skip_missing and not os.path.isfile(cache_filename)):
                 continue
 
-            results = compute_ranks(features, graphs, idx, args.ground_truth, args.cpus)
+            results = compute_ranks(features, graphs, idx, args)
             print_stats(results['stat-indexes'],idx)
             stats = []
             if len(features) != 0:

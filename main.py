@@ -30,6 +30,8 @@ parser.add_argument('--cpus', type=int, default=8,
                     help='how many CPUs to use for graph distance calculation')
 parser.add_argument('--skip-missing', action='store_true', default=False,
                     help='skip missing cached distances')
+parser.add_argument('--include-query', action='store_true', default=False,
+                    help='include the query in the results')
 args = parser.parse_args()
 
 
