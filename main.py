@@ -28,6 +28,8 @@ parser.add_argument('--clevr-dir', type=str, default='.',
                     help='CLEVR dataset base dir')
 parser.add_argument('--cpus', type=int, default=8,
                     help='how many CPUs to use for graph distance calculation')
+parser.add_argument('--skip-missing', action='store_true', default=False,
+                    help='skip missing cached distances')
 args = parser.parse_args()
 
 
@@ -83,9 +85,9 @@ if args.cut != -1:
 
 #print('Features have now shape {}'.format(features.shape))
 
-if args.normalize :
-    features = {name:similarity_search.normalized(feat, 1) for name, feat in features.items()}
+#if args.normalize :
+#    features = {name:fp.normalized(feat[0], 1) for name, feat in features.items()}
 
 #start
 images_loader = SoCImageLoader(images_dir)
-similarity_search.start(images_loader, args.query_img_index, graphs, args.N, args.ground_truth, args.until_img_index, args.cpus, features)
+similarity_search.start(images_loader, args, graphs, features)

@@ -220,7 +220,7 @@ def print_stats(stats, idx):
             stat['recall-at-1000']))
         
 #show images only if we are threating only one image
-def start(images_loader, query_img_index, graphs, n_displ_images = 10, ground_truth = 'proportional', until_img_index = None, cpus = 8, features = {}, normalize = False):
+def start(images_loader, args, graphs, features = {}):
     #prepare cache folder
     cache_dir='./cache'
     try:
@@ -235,53 +235,36 @@ def start(images_loader, query_img_index, graphs, n_displ_images = 10, ground_tr
     except:
         print('directory {} already exists'.format(stats_dir))
 
-    if not until_img_index:
-        results = compute_ranks(features, graphs, query_img_index, ground_truth, cpus)
-        print_stats(results['stat-indexes'],query_img_index)
+    if not args.until_img_index:
+        results = compute_ranks(features, graphs, args.query_img_index, args.ground_truth, args.cpus)
+        print_stats(results['stat-indexes'],args.query_img_index)
 
-        query_img = images_loader.get(query_img_index)
-
-        '''sorted_images = [images[d] for d in results['ranks'][0]]
-        #take only the first n
-        sorted_images = sorted_images[0:args.N]
-        build_figure('With g_fc4 features distance',sorted_images, 5, query_img)'''
+        query_img = images_loader.get(args.query_img_index)
 
         #sorted_conv_images = []
         for permuts in results['ranks'][0]:
             values = permuts['permuts']
             #cut to the number of image to show
-            values = values[0:n_displ_images]
+            values = values[0:args.N]
             name = permuts['name']
             sorted_images = [images_loader.get(d) for d in values]
-            build_figure('With {} features distance; query idx {}'.format(name, query_img_index), sorted_images, 5, query_img)
-        #among all the conv features, display the result for the best one in terms of spearman-rho correlation
-        #spearman_conv = {c['label']: c['spearmanr'] for c in results['stat-indexes'] if 'Conv' in c['label']}
-        #max_correlation = np.amax(spearman_conv.values())
-        #max_correl_featidx = np.argmax(spearman_conv.values())
-        #best_feat_label = list(spearman_conv.keys())[max_correl_featidx]
+            build_figure('With {} features distance; query idx {}'.format(name, args.query_img_index), sorted_images, 5, query_img)
         
-        values = results['ranks'][1][0:n_displ_images]
+        values = results['ranks'][1][0:args.N]
         sorted_images = [images_loader.get(d) for d in values]
-        build_figure('With graph edit distance ({} ground-truth); query idx {}'.format(ground_truth, query_img_index),sorted_images, 5, query_img)
+        build_figure('With graph edit distance ({} ground-truth); query idx {}'.format(args.ground_truth, args.query_img_index),sorted_images, 5, query_img)
 
         plt.show()
     else:
-        '''#first of all, cache all ged distances, if necessary
-        if(os.path.isfile(os.path.join(cache_dir,'graph_distances_queryidx{}_{}.pickle'.format(until_img_index,ground_truth)))):
-            print('All ged distances already cached! Skipping...')
-        else:
-            with multiprocessing.Pool(processes=8) as pool:
-                for idx in range(query_img_index, until_img_index+1):
-                    pool.apply_async(cache_ged_distances, args=(graphs, idx, ground_truth))
-
-                pool.close()
-                pool.join()
-        '''
-        #then, calculate actual statistics
         stats_out = {}
 
-        for idx in range(query_img_index, until_img_index+1):
-            results = compute_ranks(features, graphs, idx, ground_truth, cpus)
+        for idx in range(args.query_img_index, args.until_img_index+1):
+            #if some cached distance is missing, possibly ignore it
+            cache_filename = os.path.join('./cache','graph_distances_queryidx{}_{}.npy'.format(idx,args.ground_truth))
+            if(args.skip_missing and not os.path.isfile(cache_filename)):
+                continue
+
+            results = compute_ranks(features, graphs, idx, args.ground_truth, args.cpus)
             print_stats(results['stat-indexes'],idx)
             stats = []
             if len(features) != 0:
@@ -298,11 +281,11 @@ def start(images_loader, query_img_index, graphs, n_displ_images = 10, ground_tr
                     stats_out[stat].append(row_to_write)
         
         #dump stats on file
-        if normalize:
+        if args.normalize:
             normalized_str = 'normalized'
         else:
             normalized_str = 'no-normalized'
-        filename = os.path.join(stats_dir,'stats_{}_{}-gt.pickle'.format(normalized_str, ground_truth))
+        filename = os.path.join(stats_dir,'stats_{}_{}-gt.pickle'.format(normalized_str, args.ground_truth))
         outf = open(filename, 'wb')
         pickle.dump(stats_out, outf)
    

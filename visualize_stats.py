@@ -87,6 +87,7 @@ def build_bar_graph(merged_stats, name, max_grouping=False, confidence=0.95):
     else:
         ax.legend(bars, list(merged_stats.keys()) )
     ax.set_ylabel('{} index'.format(name))
+    ax.set_xlim(0, ind*2)
     ax.set_title('{}, {}% conf. interval'.format(name,confidence*100))
 
 def build_recall_graph(merged_stats, confidence = 0.95):
