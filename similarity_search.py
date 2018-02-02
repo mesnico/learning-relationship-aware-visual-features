@@ -165,8 +165,9 @@ def compute_ranks(features, graphs, query_img_index, args):
 
     if len(features) != 0:
         #takes the features values
-        lengths = [len(f[0]) for f in features.values()]
+        lengths = [f[0].shape[0] for f in features.values()]
         max_feats_len = max(lengths)
+        min_feats_len = min(lengths)
 
         #prepare the axis for computing log-scale recall-at-k.
         log_base = 1.3
@@ -180,7 +181,7 @@ def compute_ranks(features, graphs, query_img_index, args):
     #cut to the same number of features  
     distances_graphs = cache_ged_distances(graphs, query_img_index, args)
     if len(features) != 0:
-        distances_graphs = distances_graphs[0:max_feats_len]  
+        distances_graphs = distances_graphs[0:min_feats_len]  
 
     dist_permutations_graphs = np.argsort(distances_graphs)
     if not args.include_query:
@@ -190,11 +191,12 @@ def compute_ranks(features, graphs, query_img_index, args):
     ''' FEATURES ORDERING '''
     dist_permutations_feats = []
     for name, feat in features.items():
-        query_img_feat = feat[0][query_img_index]
+        query_img_feat = feat[0][query_img_index,:]
         dist_func = feat[1]
         dists = [dist_func(query_img_feat,f) for f in feat[0]]
+        #pdb.set_trace()
         #cut so that all feats have the same length
-        dists = dists[0:max_feats_len]
+        dists = dists[0:min_feats_len]
         permuts = np.argsort(dists)
         if not args.include_query:
             #eliminate the query from the set, it must not be in the result

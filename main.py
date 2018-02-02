@@ -74,13 +74,19 @@ json_filename = os.path.join(args.clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
 clevr_scenes = json.load(open(json_filename))['scenes']
 graphs = load_graphs(clevr_scenes)
 
+#load and process rmac features
 feat_filename = os.path.join(features_dirs,'clevr_rmac_features.h5')
 feat_order_filename = os.path.join(features_dirs,'clevr_rmac_features_order.txt')
 rmac_features = fp.load_rmac_features(feat_filename, feat_order_filename)
-rmac_features = fp.process_rmac_features(rmac_features)
+
+#load and process g_fc4 features
+filename = os.path.join(features_dirs,'avg_features.pickle')
+avg_fc4_features = fp.load_features('g_fc4_avg',filename)
+filename = os.path.join(features_dirs,'max_features.pickle')
+max_fc4_features = fp.load_features('g_fc4_max',filename)
 
 #merge fc and conv features
-features = rmac_features#= {**fc_features, **conv_features}
+features = {**avg_fc4_features, **max_fc4_features, **rmac_features}
 
 if args.cut != -1:
     features = np.asarray([features[i][0:args.cut] for i in range(len(features))])

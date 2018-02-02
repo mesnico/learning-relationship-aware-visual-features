@@ -2,21 +2,13 @@ import numpy as np
 import pickle
 import h5py
 
-def load_features(filename):
-    features = []
-
+def load_features(name, filename):
     f = open(filename, 'rb')
-    while 1:
-        try:
-            this_feat = pickle.load(f)
-            features.append(this_feat[1])
-            bs = this_feat[1].shape[0]
-            #print('batch #{} (size: {}) loaded'.format(this_feat[0], bs))
-        except EOFError:
-            break
-    #pdb.set_trace()
-    #print('features loaded from {}'.format(filename))
-    return features
+    features = pickle.load(f)
+    features = [f[1] for f in features]
+    features = np.vstack(features)
+    print('processed #{} features each of size {}'.format(features.shape[0], features.shape[1]))
+    return {name:(features, l2_dist)}
 
 def load_rmac_features(feat_filename, feat_order_filename):
     features = h5py.File(feat_filename, 'r')['/rmac']
@@ -26,18 +18,8 @@ def load_rmac_features(feat_filename, feat_order_filename):
 
     #takes only val features
     filtered = [feat for feat, name in zip(features, img_names) if 'val' in name]
-    return filtered
-
-def process_rmac_features(loaded_features):
-    return {'rmac':(loaded_features, dot_dist)}          
-
-def process_fc_features(loaded_features):
-    features = np.vstack(loaded_features)
-    max_features = np.amax(features,axis=1)
-    avg_features = np.mean(features,axis=1)
-
-    print('processed #{} features each of size {}'.format(features.shape[0], features.shape[1]))
-    return {'g_fc4_max':(max_features, l2_dist), 'g_fc4_avg':(avg_features, l2_dist)}
+    filtered = np.vstack(filtered)
+    return {'rmac':(filtered, dot_dist)}            
 
 def process_conv_features(loaded_features):
     global_max = []
