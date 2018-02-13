@@ -39,14 +39,15 @@ Builds a bar graph for every stat
 
 colors = ['r','g','b']
 
-def build_bar_graph(merged_stats, name, max_grouping=False, confidence=0.95):
+def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True, confidence=0.95):
     width=0.27
     error_formatting = dict(elinewidth=1, capsize=2)
     i = 0
     ind = 0
     feat_sorted_keys = []
     bars = []
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(4, 5))
+    plt.gcf().subplots_adjust(left=0.25)
     all_means = []
     all_y_errors = []
     for typekey, ftype in merged_stats.items():
@@ -65,13 +66,14 @@ def build_bar_graph(merged_stats, name, max_grouping=False, confidence=0.95):
             mean_values.append(mean)
             sem = st.sem(values)
             conf = st.t.ppf((1+confidence)/2, len(values)-1) * sem
-            y_errors.append(conf)
+            neg_conf = conf if mean>conf or can_be_negative else mean
+            y_errors.append([neg_conf,conf])
         all_means.append(mean_values)
         all_y_errors.append(y_errors)
         num_bars = len(feats)
         ind = np.arange(1, num_bars+1)
         if not max_grouping:
-            bars.append(plt.bar(ind+width*i, mean_values, width, color=colors[i], yerr=np.array(y_errors), error_kw=error_formatting))
+            bars.append(plt.bar(ind+width*i, mean_values, width, color=colors[i], yerr=np.transpose(np.array(y_errors)), error_kw=error_formatting))
         i=i+1
         ax.set_xticks(ind)
         ax.set_xticklabels(feats_sorted_keys)
@@ -83,11 +85,11 @@ def build_bar_graph(merged_stats, name, max_grouping=False, confidence=0.95):
         
         chosen_y_error = [all_y_errors[row][col] for col,row in enumerate(std_indexes)]
         shading = [colors[1] if 'g_fc' in f else colors[2] for f in feats_sorted_keys] 
-        plt.bar(ind, max_mean, width, color=shading, yerr=np.array(chosen_y_error), error_kw=error_formatting)
+        plt.bar(ind, max_mean, width, color=shading, yerr=np.transpose(np.array(chosen_y_error)), error_kw=error_formatting)
     else:
         ax.legend(bars, list(merged_stats.keys()) )
     ax.set_ylabel('{} index'.format(name))
-    #ax.set_xlim(0, ind*2)
+    #ax.set_xlim(0, len(ind))
     ax.set_title('{}, {}% conf. interval'.format(name,confidence*100))
 
 def build_recall_graph(merged_stats, confidence = 0.95):
@@ -143,7 +145,8 @@ def build_recall_graph(merged_stats, confidence = 0.95):
 stats = list(list(merged_stats.values())[0].keys())
 bar_stats = [s for s in stats if s not in 'recall-at-k']
 for s in bar_stats:
-    build_bar_graph(merged_stats, s, args.aggregate, args.confidence)
+    negative = True if s == 'spearmanr' else False
+    build_bar_graph(merged_stats, s, args.aggregate, negative, args.confidence)
 
 #display the grapg for the recall-at-k
 build_recall_graph(merged_stats, args.confidence)
