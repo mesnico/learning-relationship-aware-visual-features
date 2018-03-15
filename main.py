@@ -93,8 +93,8 @@ if args.cut != -1:
 
 #print('Features have now shape {}'.format(features.shape))
 
-#if args.normalize :
-#    features = {name:fp.normalized(feat[0], 1) for name, feat in features.items()}
+if args.normalize :
+    features = {name:(fp.normalized(feat[0], 1), feat[1]) for name, feat in features.items()}
 
 #start
 images_loader = SoCImageLoader(images_dir)

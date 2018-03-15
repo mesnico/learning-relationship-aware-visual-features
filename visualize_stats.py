@@ -85,7 +85,13 @@ def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True
         
         chosen_y_error = [all_y_errors[row][col] for col,row in enumerate(std_indexes)]
         shading = [colors[1] if 'g_fc' in f else colors[2] for f in feats_sorted_keys] 
-        plt.bar(ind, max_mean, width, color=shading, yerr=np.transpose(np.array(chosen_y_error)), error_kw=error_formatting)
+        yerr=np.transpose(np.array(chosen_y_error))
+        plt.bar(ind, max_mean, width, color=shading, yerr=yerr, error_kw=error_formatting)
+        
+        for ind, k in enumerate(feats_sorted_keys):
+            #pdb.set_trace()
+            print('{}--{}: {:.2}; -{:.2}/+{:.2}'.format(name,k,max_mean[ind], yerr[0,ind], yerr[1,ind]))
+
     else:
         ax.legend(bars, list(merged_stats.keys()) )
     ax.set_ylabel('{} index'.format(name))
