@@ -10,18 +10,8 @@ import multiprocessing
 import csv
 import math
 import time
+from state_similarity import StatesDistance
 #import networkx.algorithms.similarity
-
-def spearman_rho_distance(perm1, perm2):
-    perms = np.stack((perm1, perm2), axis=1)
-    perms = perms.T
-    inv_perms = np.empty(perms.shape)
-    for i in range(2):
-        for idx, val in enumerate(perms[i]):     
-            inv_perms[i][val] = idx
-    diff = np.diff(inv_perms, axis=0)
-    sum = np.sum(pow(diff,2))
-    return sum
 
 def recall_at(gt_list, c_list, k=10):
     if len(gt_list) != len(c_list):
@@ -34,7 +24,7 @@ def recall_at(gt_list, c_list, k=10):
     diff = gt_set.intersection(c_set)
     return len(diff)/k
 
-def build_figure(title, images, numcols, query_img):
+def build_figure(title, images, distances, numcols, query_img):
     num_images = len(images)
     numrows = num_images // numcols
 
@@ -46,12 +36,13 @@ def build_figure(title, images, numcols, query_img):
     query_axs.set_title('Query Image')
     query_axs.imshow(query_img)
     i = 0
-    for image in images:
+    for image, distance in zip(images, distances):
         #swim = np.swapaxes(image,0,2)
         axs = plt.subplot(gs[(i//numcols)+1, i%numcols])
         axs.set_title('#' + str(i+1))
         axs.set_yticklabels([])
         axs.set_xticklabels([])
+        axs.set_xlabel('d: {:.2e}'.format(distance))
         axs.imshow(image)
         i = i+1
 
@@ -176,7 +167,7 @@ def compute_ranks(features, graphs, query_img_index, args):
         k_logscale_axis = np.unique(k_logscale_axis)
         k_logscale_axis = k_logscale_axis.astype(int)
 
-    ''' GRAPH DISTANCE ORDERING (GROUND TRUTH)'''
+    ''' GRAPH DISTANCE ORDERING (GROUND TRUTH 1)'''
     query_img_graphs = graphs[query_img_index]
     #cut to the same number of features  
     distances_graphs = cache_ged_distances(graphs, query_img_index, args)
@@ -184,9 +175,29 @@ def compute_ranks(features, graphs, query_img_index, args):
         distances_graphs = distances_graphs[0:min_feats_len]  
 
     dist_permutations_graphs = np.argsort(distances_graphs)
+    sorted_dist_graphs = np.sort(distances_graphs)
     if not args.include_query:
         #eliminate the query from the set, it must not be in the result
         dist_permutations_graphs = dist_permutations_graphs[1:]
+        sorted_dist_graphs = sorted_dist_graphs[1:]
+
+    ''' STATE DISTANCE ORDERING (GROUND TRUTH 2)'''
+    scene_json_filename = os.path.join(args.clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
+    s = StatesDistance(scene_json_filename)
+    states_distances = s.compute_distances(query_img_index)
+    if len(features) != 0:
+        states_distances = states_distances[0:min_feats_len]
+
+    dist_permutations_states = np.argsort(states_distances)
+    sorted_dist_states = np.sort(states_distances)
+    if not args.include_query:
+        #eliminate the query from the set, it must not be in the result
+        dist_permutations_states = dist_permutations_states[1:]
+        sorted_dist_states = sorted_dist_states[1:]
+
+    #collect ranks from ground truths
+    permutations_ground_truths = [{'name': 'ged (GT1)', 'permuts': dist_permutations_graphs, 'sorted_dists':sorted_dist_graphs},
+                                  {'name': 'states distance (GT2)', 'permuts': dist_permutations_states, 'sorted_dists':sorted_dist_states}]
 
     ''' FEATURES ORDERING '''
     dist_permutations_feats = []
@@ -197,12 +208,14 @@ def compute_ranks(features, graphs, query_img_index, args):
         #pdb.set_trace()
         #cut so that all feats have the same length
         dists = dists[0:min_feats_len]
+        sorted_dists = np.sort(dists)
         permuts = np.argsort(dists)
         if not args.include_query:
             #eliminate the query from the set, it must not be in the result
             permuts = permuts[1:]
+            sorted_dists = sorted_dists[1:]
 
-        dist_permutations_feats.append({'name':name,'permuts':permuts})
+        dist_permutations_feats.append({'name':name,'permuts':permuts,'sorted_dists':sorted_dists})
 
         #calculate stats for every conv feature
         k_logscale = {k:recall_at(permuts, dist_permutations_graphs,k) for k in k_logscale_axis}
@@ -215,7 +228,7 @@ def compute_ranks(features, graphs, query_img_index, args):
                     'recall-at-k': dict(k_logscale)})
 
     number_of_items = len(query_img_graphs.nodes)
-    return {'ranks':(dist_permutations_feats, dist_permutations_graphs), 
+    return {'ranks':(dist_permutations_feats, permutations_ground_truths), 
         'stat-indexes': stat_indexes, 'items': number_of_items}
 
 def print_stats(stats, idx):
@@ -251,17 +264,18 @@ def start(images_loader, args, graphs, features = {}):
         query_img = images_loader.get(args.query_img_index)
 
         #sorted_conv_images = []
-        for permuts in results['ranks'][0]:
+        for permuts in results['ranks'][0] + results['ranks'][1]:
             values = permuts['permuts']
             #cut to the number of image to show
             values = values[0:args.N]
             name = permuts['name']
             sorted_images = [images_loader.get(d) for d in values]
-            build_figure('With {} features distance; query idx {}'.format(name, args.query_img_index), sorted_images, 5, query_img)
+            sorted_distances = permuts['sorted_dists']
+            build_figure('With {} features distance; query idx {}'.format(name, args.query_img_index), sorted_images, sorted_distances, 5, query_img)
         
-        values = results['ranks'][1][0:args.N]
+        '''values = results['ranks'][1][0:args.N]
         sorted_images = [images_loader.get(d) for d in values]
-        build_figure('With graph edit distance ({} ground-truth); query idx {}'.format(args.ground_truth, args.query_img_index),sorted_images, 5, query_img)
+        build_figure('With graph edit distance ({} ground-truth); query idx {}'.format(args.ground_truth, args.query_img_index),sorted_images, 5, query_img)'''
 
         plt.show()
     else:
