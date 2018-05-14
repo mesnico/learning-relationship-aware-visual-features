@@ -3,6 +3,13 @@ import json
 import pickle
 import numpy as np
 import pdb
+from numpy.linalg import inv
+
+'''DEBUG CODE'''
+import matplotlib.pyplot as plt
+from image_loader import ClevrImageLoader
+images = ClevrImageLoader('../../../CLEVR_v1.0/images')
+idx = 6
 
 class StatesDistance:
     class IntersectablePair:
@@ -52,7 +59,14 @@ class StatesDistance:
         return self.obj_dictionary[key]
 
     #computes distance among relations (pairs) in two different scenes
-    def distance_fn(self, scene1_dict, scene2_dict):
+    def distance_fn(self, scene_idx, scene1_dict, scene2_dict):
+        #transforms position space into an orthonormal one (clevr does not use orthonormal basis)
+        #TODO: get transform matrix components from scene json
+        def clevr_transform(vector):
+            basis_transform_matrix = np.matrix([[0.6563112735748291, -0.754490315914154],
+                                                [0.7544902563095093, 0.6563112735748291]])
+            return np.squeeze(np.asarray(np.matmul(inv(basis_transform_matrix),vector)))
+
         #calculate intersection between keys (permutation ids)
         intersection = set(scene1_dict.keys()).intersection(scene2_dict.keys())
 
@@ -65,8 +79,8 @@ class StatesDistance:
         inters_objects_scene2 = [scene2_dict[k] for k in intersection]
 
         #calculate differences among pairs (we care about only x and y)
-        deltapos_objs_scene1 = [np.asarray(o1['3d_coords'][0:2]) - np.asarray(o2['3d_coords'][0:2]) for o1,o2 in inters_objects_scene1]
-        deltapos_objs_scene2 = [np.asarray(o1['3d_coords'][0:2]) - np.asarray(o2['3d_coords'][0:2]) for o1,o2 in inters_objects_scene2]
+        deltapos_objs_scene1 = [clevr_transform(np.asarray(o1['3d_coords'][0:2]) - np.asarray(o2['3d_coords'][0:2])) for o1,o2 in inters_objects_scene1]
+        deltapos_objs_scene2 = [clevr_transform(np.asarray(o1['3d_coords'][0:2]) - np.asarray(o2['3d_coords'][0:2])) for o1,o2 in inters_objects_scene2]
         
         dist = 0
         for dpos_obj_1, dpos_obj_2 in zip(deltapos_objs_scene1, deltapos_objs_scene2):
@@ -77,6 +91,18 @@ class StatesDistance:
             elif signs[0] and signs[1]:         dist += 1/3
             elif not signs[0] and not signs[1]: dist += 1
 
+        pdb.set_trace()
+
+        ''' DEBUG CODE 
+        print('n intersections: {}'.format(len(intersection)))
+        for pair, o1, o2, deltapos1, deltapos2 in zip(intersection, inters_objects_scene1, inters_objects_scene2, deltapos_objs_scene1,deltapos_objs_scene2):
+            print('positions : {}: {};{} and {};{}'.format(pair, o1[0]['3d_coords'][0:2],o1[1]['3d_coords'][0:2], o2[0]['3d_coords'][0:2],o2[1]['3d_coords'][0:2]))
+            print('differences: {}: {} and {}'.format(pair, deltapos1, deltapos2))
+            print('Dist: {}'.format(dist))
+            plt.title('scene {}'.format(scene_idx))
+            plt.imshow(images.get(scene_idx))
+            plt.show()'''
+
         #normalization
         dist = dist / len(intersection) #2*dist / (len(scene1_dict) + len(scene2_dict))
         return dist
@@ -86,7 +112,7 @@ class StatesDistance:
         query_scene = self.states[query_img_index]
 
         distances = []
-        for curr_scene in self.states:
+        for scene_idx,curr_scene in enumerate(self.states):
             #create permutations
             #TODO: check for 'combinations' instead of permutations
             query_scene_permuts = list(itertools.combinations(query_scene, r=2))            
@@ -102,7 +128,7 @@ class StatesDistance:
             curr_scene_dict = {str(k):v for k,v in zip(curr_scene_pairs, curr_scene_permuts)}
             query_scene_dict = {str(k):v for k,v in zip(query_scene_pairs, query_scene_permuts)}
             
-            d = self.distance_fn(curr_scene_dict, query_scene_dict)
+            d = self.distance_fn(scene_idx, curr_scene_dict, query_scene_dict)
             distances.append(d)
         return distances
 
@@ -110,6 +136,7 @@ class StatesDistance:
 import os
 if __name__ == "__main__":
     clevr_dir = '../../../CLEVR_v1.0'
+    
     scene_json_filename = os.path.join(clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
     s = StatesDistance(scene_json_filename)
-    s.compute_distances(0)
+    s.compute_distances(idx)

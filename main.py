@@ -2,10 +2,10 @@ import argparse
 import os
 import json
 import pdb
-import cv2
 import networkx as nx
 import similarity_search
 import features_preprocess as fp
+from image_loader import ClevrImageLoader
 '''import importlib.util
 spec = importlib.util.spec_from_file_location("similarity_search", "../../similarity_search_engine/similarity_search.py")
 similarity_search = importlib.util.module_from_spec(spec)
@@ -36,17 +36,6 @@ args = parser.parse_args()
 
 
 features_dirs = './features'
-
-
-class SoCImageLoader():
-    def __init__(self, images_dir):
-        self.images_dir = images_dir
-
-    def get(self,index):
-        padded_index = str(index).rjust(6,'0')
-        img_filename = os.path.join(self.images_dir, 'val', 'CLEVR_val_{}.png'.format(padded_index))
-        image = cv2.imread(img_filename)
-        return image / 255.
 
 def load_graphs(clevr_scenes):
     graphs = []
@@ -97,5 +86,5 @@ if args.normalize :
     features = {name:(fp.normalized(feat[0], 1), feat[1]) for name, feat in features.items()}
 
 #start
-images_loader = SoCImageLoader(images_dir)
+images_loader = ClevrImageLoader(images_dir)
 similarity_search.start(images_loader, args, graphs, features)
