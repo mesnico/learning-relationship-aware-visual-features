@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as st
 import pdb
+from matplotlib.backends.backend_pdf import PdfPages
 from collections import OrderedDict
 
 parser = argparse.ArgumentParser(description='Stats visualizer')
@@ -148,15 +149,17 @@ def build_recall_graph(merged_stats, confidence = 0.95):
         i=i+1
 
 #display the graph for every statistic different from the recall-at-k
-stats = list(list(merged_stats.values())[0].keys())
-bar_stats = [s for s in stats if s not in 'recall-at-k']
-for s in bar_stats:
-    negative = True if s == 'spearmanr' else False
-    build_bar_graph(merged_stats, s, args.aggregate, negative, args.confidence)
+with PdfPages('stats_out.pdf') as pdf:
+    stats = list(list(merged_stats.values())[0].keys())
+    bar_stats = [s for s in stats if s not in 'recall-at-k']
+    for s in bar_stats:
+        negative = True if s == 'spearmanr' else False
+        build_bar_graph(merged_stats, s, args.aggregate, negative, args.confidence)
+        pdf.savefig()
 
-#display the grapg for the recall-at-k
-build_recall_graph(merged_stats, args.confidence)
-plt.show()
+    #display the graph for the recall-at-k
+    build_recall_graph(merged_stats, args.confidence)
+    pdf.savefig()
     
 
 

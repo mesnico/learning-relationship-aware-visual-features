@@ -55,11 +55,12 @@ def compute_ranks(feat_orders, gt_order, query_img_index, include_query=False):
 
     return stat_indexes
 
-def print_stats(stats, idx):
+def print_stats(stats, gt, idx):
     for stat in stats:
-        print('## Query idx: {} ## - Correlation among {} and GT:\n\tspearman-rho: {}\n\trecall-at-10: {}\n\trecall-at-100: {}\n\trecall-at-1000: {}'.format(
+        print('## Query idx: {} ## - Correlation among {} and actual GT: {}\n\tspearman-rho: {}\n\trecall-at-10: {}\n\trecall-at-100: {}\n\trecall-at-1000: {}'.format(
             idx,
             stat['label'],
+            gt,
             stat['spearmanr'],
             stat['recall-at-10'],
             stat['recall-at-100'],
@@ -75,8 +76,10 @@ if __name__ == '__main__':
                         help='index of the last image to use as query (for stats recording)')
     parser.add_argument('--normalize', action='store_true', default=False,
                         help='enables features normalization')
-    parser.add_argument('--ground-truth', type=str, choices=['proportional','atleastone','states'], default='proportional',
-                        help='how many images in the result')
+    parser.add_argument('--graph-ground-truth', type=str, choices=['proportional','atleastone'], default='proportional',
+                        help='ground truth if graph GT is used')
+    parser.add_argument('--ground-truth', type=str, choices=['graph','states'], default='graph',
+                        help='which GT to use')
     parser.add_argument('--clevr-dir', type=str, default='.',
                         help='CLEVR dataset base dir')
     parser.add_argument('--cpus', type=int, default=8,
@@ -106,21 +109,30 @@ if __name__ == '__main__':
     #initialize orders objects
     print('Initializing feature order objects...')
     feats_orders = []
-    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features.pickle'), 'avg', args.normalize))
-    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features.pickle'), 'max', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_sd.pickle'), 'g_fc2_avg_sd', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_fp.pickle'), 'g_fc2_avg_fp', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_sd.pickle'), 'g_fc2_max_sd', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_fp.pickle'), 'g_fc2_max_fp', args.normalize))
     feats_orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
         os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize))
     
     #initialize ground truth
-    print('Initializing ground truth...')
     scene_json_filename = os.path.join(args.clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
-    if args.ground_truth in ['proportional','atleastone']:
-        gt_order = graphs_order.GraphsOrder(scene_json_filename, args.ground_truth, args.cpus)
-    elif args.ground_truth == 'states':
-        gt_order = states_order.StatesOrder(scene_json_filename)
-    else:
-        print('Unknown ground truth!')
-        raise ValueError
+    print('Initializing ground truth...')
+    gt_orders = {}
+    gt_orders['graph'] = graphs_order.GraphsOrder(scene_json_filename, args.graph_ground_truth, args.cpus)
+    gt_orders['states'] = states_order.StatesOrder(scene_json_filename)
+    
+    found_gt = False
+    for k in list(gt_orders.keys()):
+        if args.ground_truth == k:
+            actual_gt_order = gt_orders[k]
+            del gt_orders[k]
+            found_gt = True
+    assert found_gt, 'Unknown ground truth!'
+
+    #add remaining ground truths as features
+    feats_orders = feats_orders + list(gt_orders.values())
 
     for idx in range(args.query_img_index, args.until_img_index+1):
         #if some cached distance is missing, possibly ignore it
@@ -128,8 +140,8 @@ if __name__ == '__main__':
         if(args.skip_missing and not os.path.isfile(cache_filename)):
             continue
 
-        stat_indexes = compute_ranks(feats_orders, gt_order, idx)
-        print_stats(stat_indexes,idx)
+        stat_indexes = compute_ranks(feats_orders, actual_gt_order, idx)
+        print_stats(stat_indexes,actual_gt_order.get_name(),idx)
 
         stats = list(stat_indexes[0].keys())
         #take only the statistical indexes and leave the label apart
