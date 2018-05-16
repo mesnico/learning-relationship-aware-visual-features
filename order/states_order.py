@@ -4,14 +4,10 @@ import pickle
 import numpy as np
 import pdb
 from numpy.linalg import inv
+from .order_base import OrderBase
 
-'''DEBUG CODE'''
-import matplotlib.pyplot as plt
-from image_loader import ClevrImageLoader
-images = ClevrImageLoader('../../../CLEVR_v1.0/images')
-idx = 6
-
-class StatesDistance:
+'''Ordering for distances extracted from states'''
+class StatesOrder(OrderBase):
     class IntersectablePair:
         def __init__(self, id_obj_1, id_obj_2, pair):
             self.id_obj_1 = id_obj_1
@@ -23,6 +19,8 @@ class StatesDistance:
             return hash((self.id_obj_1,self.id_obj_2))
 
     def __init__(self, state_file):
+        super().__init__()
+        print('Loading states from JSON...')
         self.states = self.load_states(state_file)
         self.obj_dictionary = {}
 
@@ -69,10 +67,7 @@ class StatesDistance:
 
         #calculate intersection between keys (permutation ids)
         intersection = set(scene1_dict.keys()).intersection(scene2_dict.keys())
-
-        if len(intersection) == 0:
-            #return maximum distance
-            return 1.0
+        union = set(scene1_dict.keys()).union(scene2_dict.keys())
         
         #retrieve intersecting objects
         inters_objects_scene1 = [scene1_dict[k] for k in intersection]
@@ -82,16 +77,14 @@ class StatesDistance:
         deltapos_objs_scene1 = [clevr_transform(np.asarray(o1['3d_coords'][0:2]) - np.asarray(o2['3d_coords'][0:2])) for o1,o2 in inters_objects_scene1]
         deltapos_objs_scene2 = [clevr_transform(np.asarray(o1['3d_coords'][0:2]) - np.asarray(o2['3d_coords'][0:2])) for o1,o2 in inters_objects_scene2]
         
-        dist = 0
+        sim = 0
         for dpos_obj_1, dpos_obj_2 in zip(deltapos_objs_scene1, deltapos_objs_scene2):
             signs = [(dpos_obj_1[i] > 0) == (dpos_obj_2[i] > 0) for i in range(2)]
 
             #distance chosen on the basis of coordinate signs match
-            if signs[0] != signs[1]:          dist += 2/3
-            elif signs[0] and signs[1]:         dist += 1/3
-            elif not signs[0] and not signs[1]: dist += 1
-
-        pdb.set_trace()
+            if signs[0] != signs[1]:          sim += 2/3
+            elif signs[0] and signs[1]:         sim += 1
+            elif not signs[0] and not signs[1]: sim += 1/3
 
         ''' DEBUG CODE 
         print('n intersections: {}'.format(len(intersection)))
@@ -103,8 +96,8 @@ class StatesDistance:
             plt.imshow(images.get(scene_idx))
             plt.show()'''
 
-        #normalization
-        dist = dist / len(intersection) #2*dist / (len(scene1_dict) + len(scene2_dict))
+        #jaccard distance
+        dist = 1 - len(intersection)/len(union)
         return dist
 
     def compute_distances(self, query_img_index):
@@ -130,13 +123,21 @@ class StatesDistance:
             
             d = self.distance_fn(scene_idx, curr_scene_dict, query_scene_dict)
             distances.append(d)
+        
         return distances
+
+    def get_name(self):
+        return 'states GT'
+
+    def length(self):
+        return len(self.states)
 
 #simple test
 import os
 if __name__ == "__main__":
     clevr_dir = '../../../CLEVR_v1.0'
+    idx = 6
     
     scene_json_filename = os.path.join(clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
-    s = StatesDistance(scene_json_filename)
-    s.compute_distances(idx)
+    s = StatesOrder(scene_json_filename)
+    print(s.get(idx))
