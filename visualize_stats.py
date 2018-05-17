@@ -10,12 +10,14 @@ from matplotlib.backends.backend_pdf import PdfPages
 from collections import OrderedDict
 
 parser = argparse.ArgumentParser(description='Stats visualizer')
-parser.add_argument('--ground-truth', type=str, choices=['proportional','atleastone'], default='proportional',
+parser.add_argument('--ground-truth', type=str, choices=['proportional','atleastone','states'], default='proportional',
                     help='how many images in the result')
 parser.add_argument('--aggregate', action='store_true', default=False,
                     help='enable max aggregation on multiple stats files')
 parser.add_argument('--confidence', type=float, default=0.95,
                     help='confidence interval')
+parser.add_argument('--scale', type=float, default=2.0,
+                    help='graphs scale factor')
 args = parser.parse_args()
 
 stats_dir = './stats'
@@ -40,14 +42,14 @@ Builds a bar graph for every stat
 
 colors = ['r','g','b']
 
-def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True, confidence=0.95):
+def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True, confidence=0.95, scale=1.0):
     width=0.27
     error_formatting = dict(elinewidth=1, capsize=2)
     i = 0
     ind = 0
     feat_sorted_keys = []
     bars = []
-    fig, ax = plt.subplots(figsize=(4, 5))
+    fig, ax = plt.subplots(figsize=(4*scale, 5*scale))
     plt.gcf().subplots_adjust(left=0.25)
     all_means = []
     all_y_errors = []
@@ -99,7 +101,7 @@ def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True
     #ax.set_xlim(0, len(ind))
     ax.set_title('{}, {}% conf. interval'.format(name,confidence*100))
 
-def build_recall_graph(merged_stats, confidence = 0.95):
+def build_recall_graph(merged_stats, confidence = 0.95, scale=1.0):
     view = {}
     for typekey, ftype in merged_stats.items():
         #typekes at this moment can be only 'normalized' or 'no-normalized'
@@ -123,7 +125,7 @@ def build_recall_graph(merged_stats, confidence = 0.95):
                 view[typekey][feat].append(s)
 
     #calculate mean and conf interval for every point
-    fig, ax = plt.subplots(len(view))
+    fig, ax = plt.subplots(len(view), figsize=(4*scale, 5*scale))
     i = 0
     for typekey, ftype in view.items():
         if len(view) == 1:
@@ -149,16 +151,16 @@ def build_recall_graph(merged_stats, confidence = 0.95):
         i=i+1
 
 #display the graph for every statistic different from the recall-at-k
-with PdfPages('stats_out.pdf') as pdf:
+with PdfPages('stats_out_{}-gt.pdf'.format(args.ground_truth)) as pdf:
     stats = list(list(merged_stats.values())[0].keys())
     bar_stats = [s for s in stats if s not in 'recall-at-k']
     for s in bar_stats:
         negative = True if s == 'spearmanr' else False
-        build_bar_graph(merged_stats, s, args.aggregate, negative, args.confidence)
+        build_bar_graph(merged_stats, s, args.aggregate, negative, args.confidence, args.scale)
         pdf.savefig()
 
     #display the graph for the recall-at-k
-    build_recall_graph(merged_stats, args.confidence)
+    build_recall_graph(merged_stats, args.confidence, args.scale)
     pdf.savefig()
     
 

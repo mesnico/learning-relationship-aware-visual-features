@@ -24,7 +24,6 @@ def recall_at(gt_list, c_list, k=10):
 
 def compute_ranks(feat_orders, gt_order, query_img_index, include_query=False):
     stat_indexes = []
-    
     max_feats_len, min_feats_len = utils.max_min_length(feat_orders + [gt_order])
 
     #prepare the axis for computing log-scale recall-at-k.
@@ -45,7 +44,7 @@ def compute_ranks(feat_orders, gt_order, query_img_index, include_query=False):
 
         #calculate stats for every feature
         k_logscale = {k:recall_at(permut, perm_gt, k) for k in k_logscale_axis}
-
+        
         stat_indexes.append({'label': name,
                     'spearmanr': spearmanr(dist, dist_gt)[0],
                     'recall-at-10': recall_at(permut, perm_gt, 10),
@@ -136,7 +135,7 @@ if __name__ == '__main__':
 
     for idx in range(args.query_img_index, args.until_img_index+1):
         #if some cached distance is missing, possibly ignore it
-        cache_filename = os.path.join('./cache','graph_distances_queryidx{}_{}.npy'.format(idx,args.ground_truth))
+        cache_filename = os.path.join('./cache','graph_distances_queryidx{}_{}.npy'.format(idx,args.graph_ground_truth))
         if(args.skip_missing and not os.path.isfile(cache_filename)):
             continue
 
@@ -160,6 +159,7 @@ if __name__ == '__main__':
         normalized_str = 'normalized'
     else:
         normalized_str = 'no-normalized'
-    filename = os.path.join(stats_dir,'stats_{}_{}-gt.pickle'.format(normalized_str, args.ground_truth))
+    gt = args.graph_ground_truth if args.ground_truth == 'graph' else args.ground_truth 
+    filename = os.path.join(stats_dir,'stats_{}_{}-gt.pickle'.format(normalized_str, gt))
     outf = open(filename, 'wb')
     pickle.dump(stats_out, outf)
