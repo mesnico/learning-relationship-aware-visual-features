@@ -2,10 +2,9 @@ import pickle
 import numpy as np
 import pdb
 import networkx as nx
-import multiprocessing
-import time
 import json
-from .order_base import OrderBase
+from order_base import OrderBase
+from parallel_dist import parallel_distance
 
 '''
 Calculates graph edit distance.
@@ -54,26 +53,6 @@ def ged(g1,g2,node_weight_mode='proportional'):
          edge_subst_cost = edge_subst_cost,
          node_subst_cost = node_subst_cost)
 
-def ged_parallel_worker(query_img_index, idx, node_weight_mode):
-    if ged_parallel_worker.distances[idx] < 0:
-        query_img_graphs = ged_parallel_worker.graphs[query_img_index]
-        g = ged_parallel_worker.graphs[idx]
-        start = time.time()
-        dist = ged(query_img_graphs,g, node_weight_mode)
-        end = time.time()
-        print('## Query idx: {}, mode {} ## - #edges: {}; sample#{}/{} ({} s)'.format(query_img_index, node_weight_mode, len(g.edges), idx, len(ged_parallel_worker.graphs), end-start))
-        ged_parallel_worker.distances[idx] = dist
-    #else:
-        #print('## Query idx: {}, mode {} ## ------------- sample#{}/{} SKIP'.format(query_img_index, node_weight_mode, idx, len(ged_parallel_worker.graphs)))        
-
-'''
-used to inizialize workers context with the queue
-'''
-def ged_parallel_worker_init(distances, graphs):
-    ged_parallel_worker.distances = distances
-    ged_parallel_worker.graphs = graphs
-
-
 '''Ordering for distances extracted by graphs by means of graph edit distance'''
 class GraphsOrder(OrderBase):
     def __init__(self, scene_file, gt='proportional', ncpu=4):
@@ -105,27 +84,7 @@ class GraphsOrder(OrderBase):
         return graphs
 
     def compute_distances(self, query_img_index):
-        query_img_graphs = self.graphs[query_img_index]
-        filename = os.path.join('./cache','graph_distances_queryidx{}_{}.npy'.format(query_img_index,self.gt))
-        n_graphs = len(self.graphs)
-        if os.path.isfile(filename):
-            print('Graph distances file existing for image {}, mode {}! Loading...'.format(query_img_index,self.gt))
-            distances = np.memmap(filename, dtype=np.float32, shape=(n_graphs,), mode='r+')
-        else:
-            distances = np.memmap(filename, dtype=np.float32, shape=(n_graphs,), mode='w+')
-            distances[:] = -1
-            
-        print('Computing {} graph distances for image {}, mode {};...'.format(len(self.graphs),query_img_index,self.gt))
-        
-        with multiprocessing.Pool(processes=self.ncpu, initializer=ged_parallel_worker_init, initargs=(distances,self.graphs)) as pool:
-            for idx in range(n_graphs):
-                pool.apply_async(ged_parallel_worker, args=(query_img_index, idx, self.gt))
-            
-            pool.close()
-            pool.join()
-
-        distances.flush()
-        return distances
+        return parallel_distance('ged-{}'.format(self.gt), self.graphs, query_img_index, ged, kwargs={'node_weight_mode':self.gt}, ncpu=self.ncpu)
 
     def get_name(self):
         return 'graph GT ({})'.format(self.gt)
@@ -136,7 +95,7 @@ class GraphsOrder(OrderBase):
 #simple test
 import os
 if __name__ == "__main__":
-    clevr_dir = '../../../../CLEVR_v1.0'
+    clevr_dir = '../../../CLEVR_v1.0'
     idx = 6
     
     scene_json_filename = os.path.join(clevr_dir, 'scenes', 'CLEVR_val_scenes.json')

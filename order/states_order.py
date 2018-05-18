@@ -5,9 +5,12 @@ import numpy as np
 import pdb
 from numpy.linalg import inv
 from order_base import OrderBase
+from parallel_dist import parallel_distance
 
 '''Ordering for distances extracted from states'''
 class StatesOrder(OrderBase):
+    states = None
+
     class IntersectablePair:
         def __init__(self, id_obj_1, id_obj_2, pair):
             self.id_obj_1 = id_obj_1
@@ -18,14 +21,16 @@ class StatesOrder(OrderBase):
         def __hash__(self):
             return hash((self.id_obj_1,self.id_obj_2))
 
-    def __init__(self, state_file):
+    def __init__(self, state_file, mode='fuzzy', ncpu=4):
         super().__init__()
-        print('Loading states from JSON...')
-        self.states = self.load_states(state_file)
-        self.obj_dictionary = {}
+        if not StatesOrder.states:
+            print('Loading states from JSON...')
+            StatesOrder.states = self.load_states(state_file)
+        
         #attributes used as primary key for identifying an object
-        self.keying_attributes = ['color','size','shape','material']
         self.all_permuts = None
+        self.mode = mode
+        self.ncpu = ncpu
 
     def load_states(self, state_file):
         cached_scenes = state_file.replace('.json', '.simil.pkl')
@@ -47,15 +52,6 @@ class StatesOrder(OrderBase):
 
         return objects
 
-    #returns unique ids for equal objects
-    def get_object_id(self, obj_state):
-        # keys for accessing obj dictionary exclude 3d_coords
-        key = {k:v for k,v in obj_state.items() if k in self.keying_attributes}
-        key = str(key)
-        if key not in self.obj_dictionary:
-            self.obj_dictionary[key] = len(self.obj_dictionary)+1
-        return self.obj_dictionary[key]
-
     #transforms position space into an orthonormal one (clevr does not use orthonormal basis)
     #TODO: get transform matrix components from scene json
     def clevr_transform(self,vector):
@@ -63,7 +59,7 @@ class StatesOrder(OrderBase):
                                             [0.7544902563095093, 0.6563112735748291]])
         return np.squeeze(np.asarray(np.matmul(inv(basis_transform_matrix),vector)))
 
-    def distance_fn_xor(self, scene_idx, scene1_dict, scene2_dict):
+    def single_distance_fn_xor(self, scene1_dict, scene2_dict):
         classes = {
             'deltax':[True, False],
             'deltay':[True, False],
@@ -108,8 +104,7 @@ class StatesOrder(OrderBase):
         return dist
 
     #computes distance among relations (pairs) in two different scenes
-    def distance_fn_fuzzy(self, scene_idx, scene1_dict, scene2_dict):
-        #transforms position space into an orthonormal one (clevr does not use orthonormal basis)
+    def single_distance_fn_fuzzy(self, scene1_dict, scene2_dict, keying_attributes):
 
         def similarity(relations_scene1, relations_scene2):
             sim = 0
@@ -118,7 +113,7 @@ class StatesOrder(OrderBase):
                 for s2_obj1, s2_obj2 in relations_scene2:
                     sim_sum = 0
                     #attributes similarity
-                    for attr in self.keying_attributes:
+                    for attr in keying_attributes:
                         if s1_obj1[attr] != s2_obj1[attr] and s1_obj2[attr] != s2_obj2[attr]:       sim_sum += 0
                         elif (s1_obj1[attr] == s2_obj1[attr]) != (s1_obj2[attr] == s2_obj2[attr]):  sim_sum += 1
                         elif s1_obj1[attr] == s2_obj1[attr] and s1_obj2[attr] == s2_obj2[attr]:     sim_sum += 2
@@ -141,12 +136,12 @@ class StatesOrder(OrderBase):
         relations_scene1 = scene1_dict.values()
         relations_scene2 = scene2_dict.values()
         
-        symm_sim = min(similarity(relations_scene1, relations_scene2), similarity(relations_scene2, relations_scene1))
+        symm_sim = max(similarity(relations_scene1, relations_scene2), similarity(relations_scene2, relations_scene1))
         dist = 1 - symm_sim/(len(scene1_dict)+len(scene2_dict)-symm_sim)
         return dist
 
     #computes distance among relations (pairs) in two different scenes
-    def distance_fn_jaccard(self, scene_idx, scene1_dict, scene2_dict):
+    def single_distance_fn_jaccard(self, scene1_dict, scene2_dict):
 
         #calculate intersection between keys (permutation ids)
         intersection = set(scene1_dict.keys()).intersection(scene2_dict.keys())
@@ -174,30 +169,37 @@ class StatesOrder(OrderBase):
         return dist
 
     def compute_distances(self, query_img_index):
-        #get states of the query image
-        query_scene = self.states[query_img_index]
+        return parallel_distance('states-{}'.format(self.mode), self.states, query_img_index, self._compute_distances, ncpu=self.ncpu)
 
-        distances = []
-        for scene_idx,curr_scene in enumerate(self.states):
-            #create permutations
-            #TODO: check for 'combinations' instead of permutations
-            query_scene_permuts = list(itertools.permutations(query_scene, r=2))            
-            curr_scene_permuts = list(itertools.permutations(curr_scene, r=2))
+    def _compute_distances(self, query_scene, curr_scene):
+        obj_dictionary = {}
+        #returns unique ids for equal objects
+        keying_attributes = ['color','size','shape','material']
+        def get_object_id(obj_state):
+            # keys for accessing obj dictionary exclude 3d_coords
+            key = {k:v for k,v in obj_state.items() if k in keying_attributes}
+            key = str(key)
+            if key not in obj_dictionary:
+                obj_dictionary[key] = len(obj_dictionary)+1
+            return obj_dictionary[key]
 
-            #create permutations ids
-            curr_scene_pairs = [(self.get_object_id(s[0]), self.get_object_id(s[1]))
-                for s in curr_scene_permuts]
-            query_scene_pairs = [(self.get_object_id(s[0]), self.get_object_id(s[1]))
-                for s in query_scene_permuts]
+        #create permutations
+        #TODO: check for 'combinations' instead of permutations
+        query_scene_permuts = list(itertools.permutations(query_scene, r=2))            
+        curr_scene_permuts = list(itertools.permutations(curr_scene, r=2))
 
-            #create dictionaries from permutation ids to objects
-            curr_scene_dict = {str(k):v for k,v in zip(curr_scene_pairs, curr_scene_permuts)}
-            query_scene_dict = {str(k):v for k,v in zip(query_scene_pairs, query_scene_permuts)}
-            
-            d = self.distance_fn_fuzzy(scene_idx, curr_scene_dict, query_scene_dict)
-            distances.append(d)
+        #create permutations ids
+        curr_scene_pairs = [(get_object_id(s[0]), get_object_id(s[1]))
+            for s in curr_scene_permuts]
+        query_scene_pairs = [(get_object_id(s[0]), get_object_id(s[1]))
+            for s in query_scene_permuts]
+
+        #create dictionaries from permutation ids to objects
+        curr_scene_dict = {str(k):v for k,v in zip(curr_scene_pairs, curr_scene_permuts)}
+        query_scene_dict = {str(k):v for k,v in zip(query_scene_pairs, query_scene_permuts)}
         
-        return distances
+        d = self.single_distance_fn_fuzzy(curr_scene_dict, query_scene_dict, keying_attributes)
+        return d
 
     def get_name(self):
         return 'states GT'
@@ -208,7 +210,7 @@ class StatesOrder(OrderBase):
 #simple test
 import os
 if __name__ == "__main__":
-    clevr_dir = '../../../../CLEVR_v1.0'
+    clevr_dir = '../../../CLEVR_v1.0'
     idx = 6
     
     scene_json_filename = os.path.join(clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
