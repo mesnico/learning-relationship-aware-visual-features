@@ -120,7 +120,7 @@ if __name__ == '__main__':
     print('Initializing ground truth...')
     gt_orders = {}
     gt_orders['graph'] = graphs_order.GraphsOrder(scene_json_filename, args.graph_ground_truth, args.cpus)
-    gt_orders['states'] = states_order.StatesOrder(scene_json_filename)
+    gt_orders['states'] = states_order.StatesOrder(scene_json_filename, mode='fuzzy', ncpu=args.cpus)
     
     found_gt = False
     for k in list(gt_orders.keys()):

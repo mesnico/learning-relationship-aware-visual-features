@@ -4,22 +4,12 @@ import pickle
 import numpy as np
 import pdb
 from numpy.linalg import inv
-from order_base import OrderBase
-from parallel_dist import parallel_distance
+from .order_base import OrderBase
+from .parallel_dist import parallel_distances
 
 '''Ordering for distances extracted from states'''
 class StatesOrder(OrderBase):
     states = None
-
-    class IntersectablePair:
-        def __init__(self, id_obj_1, id_obj_2, pair):
-            self.id_obj_1 = id_obj_1
-            self.id_obj_2 = id_obj_2
-            self.pair = pair
-        def __eq__(self, other):
-            return self.id_obj_1, self.id_obj_2 == other.id_obj_1, other.id_obj_2
-        def __hash__(self):
-            return hash((self.id_obj_1,self.id_obj_2))
 
     def __init__(self, state_file, mode='fuzzy', ncpu=4):
         super().__init__()
@@ -31,6 +21,7 @@ class StatesOrder(OrderBase):
         self.all_permuts = None
         self.mode = mode
         self.ncpu = ncpu
+        self.keying_attributes = ['color','size','shape','material']
 
     def load_states(self, state_file):
         cached_scenes = state_file.replace('.json', '.simil.pkl')
@@ -104,7 +95,7 @@ class StatesOrder(OrderBase):
         return dist
 
     #computes distance among relations (pairs) in two different scenes
-    def single_distance_fn_fuzzy(self, scene1_dict, scene2_dict, keying_attributes):
+    def single_distance_fn_fuzzy(self, scene1_dict, scene2_dict):
 
         def similarity(relations_scene1, relations_scene2):
             sim = 0
@@ -113,11 +104,11 @@ class StatesOrder(OrderBase):
                 for s2_obj1, s2_obj2 in relations_scene2:
                     sim_sum = 0
                     #attributes similarity
-                    for attr in keying_attributes:
+                    for attr in self.keying_attributes:
                         if s1_obj1[attr] != s2_obj1[attr] and s1_obj2[attr] != s2_obj2[attr]:       sim_sum += 0
                         elif (s1_obj1[attr] == s2_obj1[attr]) != (s1_obj2[attr] == s2_obj2[attr]):  sim_sum += 1
                         elif s1_obj1[attr] == s2_obj1[attr] and s1_obj2[attr] == s2_obj2[attr]:     sim_sum += 2
-                    sim_sum /= 8
+                    sim_sum /= 2*len(self.keying_attributes)
                     #coordinate similarity
                     coord_sim = 0
                     dpos_obj_1 = self.clevr_transform(
@@ -136,7 +127,7 @@ class StatesOrder(OrderBase):
         relations_scene1 = scene1_dict.values()
         relations_scene2 = scene2_dict.values()
         
-        symm_sim = max(similarity(relations_scene1, relations_scene2), similarity(relations_scene2, relations_scene1))
+        symm_sim = min(similarity(relations_scene1, relations_scene2), similarity(relations_scene2, relations_scene1))
         dist = 1 - symm_sim/(len(scene1_dict)+len(scene2_dict)-symm_sim)
         return dist
 
@@ -169,15 +160,14 @@ class StatesOrder(OrderBase):
         return dist
 
     def compute_distances(self, query_img_index):
-        return parallel_distance('states-{}'.format(self.mode), self.states, query_img_index, self._compute_distances, ncpu=self.ncpu)
+        return parallel_distances('states-{}'.format(self.mode), self.states, query_img_index, self._compute_distances, ncpu=self.ncpu, kwargs={'mode':self.mode})
 
-    def _compute_distances(self, query_scene, curr_scene):
+    def _compute_distances(self, query_scene, curr_scene, mode):
         obj_dictionary = {}
         #returns unique ids for equal objects
-        keying_attributes = ['color','size','shape','material']
         def get_object_id(obj_state):
             # keys for accessing obj dictionary exclude 3d_coords
-            key = {k:v for k,v in obj_state.items() if k in keying_attributes}
+            key = {k:v for k,v in obj_state.items() if k in self.keying_attributes}
             key = str(key)
             if key not in obj_dictionary:
                 obj_dictionary[key] = len(obj_dictionary)+1
@@ -198,7 +188,14 @@ class StatesOrder(OrderBase):
         curr_scene_dict = {str(k):v for k,v in zip(curr_scene_pairs, curr_scene_permuts)}
         query_scene_dict = {str(k):v for k,v in zip(query_scene_pairs, query_scene_permuts)}
         
-        d = self.single_distance_fn_fuzzy(curr_scene_dict, query_scene_dict, keying_attributes)
+        if mode == 'fuzzy':
+            d = self.single_distance_fn_fuzzy(curr_scene_dict, query_scene_dict)
+        elif mode == 'xor':
+            d = self.single_distance_fn_xor(curr_scene_dict, query_scene_dict)
+        elif mode == 'jaccard':
+            d = self.single_distance_fn_jaccard(curr_scene_dict, query_scene_dict)
+        else:
+            raise ValueError
         return d
 
     def get_name(self):
