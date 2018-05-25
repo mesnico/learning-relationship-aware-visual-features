@@ -90,7 +90,7 @@ if __name__ == '__main__':
     feats_dir = './features'    
 
     #prepare cache folder
-    cache_dir='./cache'
+    cache_dir='./dist_cache'
     try:
         os.makedirs(cache_dir)
     except:
@@ -108,10 +108,18 @@ if __name__ == '__main__':
     #initialize orders objects
     print('Initializing feature order objects...')
     feats_orders = []
-    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_sd.pickle'), 'g_fc2_avg_sd', args.normalize))
-    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_fp.pickle'), 'g_fc2_avg_fp', args.normalize))
-    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_sd.pickle'), 'g_fc2_max_sd', args.normalize))
-    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_fp.pickle'), 'g_fc2_max_fp', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_sd.pickle'), 'g_fc2\navg sd', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_sd.pickle'), 'g_fc2\nmax sd', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_avg_features_sd.pickle'), 'g_fc1\navg sd', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_avg_features_fp.pickle'), 'g_fc1\navg fp', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_max_features_sd.pickle'), 'g_fc1\nmax sd', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_max_features_fp.pickle'), 'g_fc1\nmax fp', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_conv_sd.pickle'), 'conv\navg sd', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_conv_fp.pickle'), 'conv\navg fp', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_conv_sd.pickle'), 'conv\nmax sd', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_conv_fp.pickle'), 'conv\nmax fp', args.normalize))
     feats_orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
         os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize))
     
@@ -135,8 +143,8 @@ if __name__ == '__main__':
 
     for idx in range(args.query_img_index, args.until_img_index+1):
         #if some cached distance is missing, possibly ignore it
-        cache_filename = os.path.join('./cache','graph_distances_queryidx{}_{}.npy'.format(idx,args.graph_ground_truth))
-        if(args.skip_missing and not os.path.isfile(cache_filename)):
+        dist_files_exist = [os.path.isfile(os.path.join(cache_dir,d,'d_{}.npy'.format(idx))) for d in os.listdir(cache_dir)]
+        if args.skip_missing and not all(dist_files_exist):
             continue
 
         stat_indexes = compute_ranks(feats_orders, actual_gt_order, idx)

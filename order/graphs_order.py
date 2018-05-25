@@ -44,16 +44,16 @@ class GraphsOrder(OrderBase):
     If node_weight_mode == 'proportional', node substitution weights 1/n for every of the attributes not matching (n is total number of attributes)
     If node_weight_mode == 'atleastone', node substitution weights 1 is even only one attribute does not match
     '''
-    def ged(g1,g2,node_weight_mode='proportional'):
-        #need to incorporate edges attributes in order for ged edge costs to work correctly
+    def ged(self,g1,g2,node_weight_mode='proportional'):
+        '''#need to incorporate edges attributes in order for ged edge costs to work correctly
         for e, attr in g1.edges.items():
         #pdb.set_trace()
             attr['nodes'] = '{}-{}'.format(e[0],e[1])
         for e, attr in g2.edges.items():
-            attr['nodes'] = '{}-{}'.format(e[0],e[1])
+            attr['nodes'] = '{}-{}'.format(e[0],e[1])'''
 
         def edge_subst_cost(gattr, hattr):
-            if (gattr['relation'] == hattr['relation']) and (gattr['nodes'] == hattr['nodes']):
+            if (gattr['relation'] == hattr['relation']): #and (gattr['nodes'] == hattr['nodes']):
                 return 0
             else:
                 return 1
@@ -90,7 +90,7 @@ class GraphsOrder(OrderBase):
         return parallel_distances('ged-{}'.format(self.gt), self.graphs, query_img_index, self.ged, kwargs={'node_weight_mode':self.gt}, ncpu=self.ncpu)
 
     def get_name(self):
-        return 'graph GT ({})'.format(self.gt)
+        return 'graph GT\n({})'.format(self.gt)
     def length(self):
         return len(self.graphs)
 

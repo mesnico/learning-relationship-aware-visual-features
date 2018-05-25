@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')    
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.backends.backend_pdf import PdfPages
@@ -78,7 +80,7 @@ if __name__ == '__main__':
         os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize))
     scene_json_filename = os.path.join(args.clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
     orders.append(graphs_order.GraphsOrder(scene_json_filename, 'proportional', 2))
-    orders.append(states_order.StatesOrder(scene_json_filename))
+    orders.append(states_order.StatesOrder(scene_json_filename, mode='fuzzy', ncpu=2))
 
     orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_sd.pickle'), 'g_fc2_avg state description', args.normalize))
     orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_fp.pickle'), 'g_fc2_avg from pixels', args.normalize))

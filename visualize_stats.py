@@ -2,6 +2,8 @@ import numpy as np
 import argparse
 import pickle
 import os
+import matplotlib
+matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as st
@@ -49,7 +51,7 @@ def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True
     ind = 0
     feat_sorted_keys = []
     bars = []
-    fig, ax = plt.subplots(figsize=(4*scale, 5*scale))
+    fig, ax = plt.subplots(figsize=(5*scale, 4*scale))
     plt.gcf().subplots_adjust(left=0.25)
     all_means = []
     all_y_errors = []
