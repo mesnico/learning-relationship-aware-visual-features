@@ -13,10 +13,12 @@ class OrderBase(ABC):
     def get_name():
         return NotImplemented
 
-    def get(self, query_idx):
+    def get(self, query_idx, include_query=False):
         #simple caching mechanism
         if query_idx != self.old_query_idx:
             self.__distances = self.compute_distances(query_idx)
+            if not include_query:
+                self.__distances = np.delete(self.__distances, query_idx)
             self.__ordered_distances = np.sort(self.__distances)
             self.__permuts = np.argsort(self.__distances, kind='mergesort')
             self.old_query_idx = query_idx

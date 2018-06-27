@@ -6,9 +6,10 @@ import networkx as nx
 from scipy.stats import spearmanr 
 import math
 import time
-from order import rn_order, rmac_order, graphs_order, states_order
+from order import rn_order, rmac_order, graphs_order, states_order, graphs_approx_order
 from order import utils
 import argparse
+import metrics
 #import networkx.algorithms.similarity
 
 def recall_at(gt_list, c_list, k=10):
@@ -47,6 +48,7 @@ def compute_ranks(feat_orders, gt_order, query_img_index, include_query=False):
         
         stat_indexes.append({'label': name,
                     'spearmanr': spearmanr(dist, dist_gt)[0],
+                    'nDCG': metrics.ndcg_from_ranking(max(dist_gt) - dist_gt, permut[:500]),
                     'recall-at-10': recall_at(permut, perm_gt, 10),
                     'recall-at-100': recall_at(permut, perm_gt, 100),
                     'recall-at-1000': recall_at(permut, perm_gt, 1000),
@@ -56,11 +58,12 @@ def compute_ranks(feat_orders, gt_order, query_img_index, include_query=False):
 
 def print_stats(stats, gt, idx):
     for stat in stats:
-        print('## Query idx: {} ## - Correlation among {} and actual GT: {}\n\tspearman-rho: {}\n\trecall-at-10: {}\n\trecall-at-100: {}\n\trecall-at-1000: {}'.format(
+        print('## Query idx: {} ## - Correlation among {} and actual GT: {}\n\tspearman-rho: {}\n\tnDCG: {}\n\trecall-at-10: {}\n\trecall-at-100: {}\n\trecall-at-1000: {}'.format(
             idx,
             stat['label'],
             gt,
             stat['spearmanr'],
+            stat['nDCG'],
             stat['recall-at-10'],
             stat['recall-at-100'],
             stat['recall-at-1000']))
@@ -77,7 +80,7 @@ if __name__ == '__main__':
                         help='enables features normalization')
     parser.add_argument('--graph-ground-truth', type=str, choices=['proportional','atleastone'], default='proportional',
                         help='ground truth if graph GT is used')
-    parser.add_argument('--ground-truth', type=str, choices=['graph','states'], default='graph',
+    parser.add_argument('--ground-truth', type=str, choices=['graph','graph-approx','states'], default='graph',
                         help='which GT to use')
     parser.add_argument('--clevr-dir', type=str, default='.',
                         help='CLEVR dataset base dir')
@@ -133,6 +136,7 @@ if __name__ == '__main__':
     print('Initializing ground truth...')
     gt_orders = {}
     gt_orders['graph'] = graphs_order.GraphsOrder(scene_json_filename, args.graph_ground_truth, args.cpus)
+    gt_orders['graph-approx'] = graphs_approx_order.GraphsApproxOrder(scene_json_filename, args.graph_ground_truth, args.cpus)
     gt_orders['states'] = states_order.StatesOrder(scene_json_filename, mode='fuzzy', ncpu=args.cpus)
     
     found_gt = False
@@ -172,7 +176,7 @@ if __name__ == '__main__':
         normalized_str = 'normalized'
     else:
         normalized_str = 'no-normalized'
-    gt = args.graph_ground_truth if args.ground_truth == 'graph' else args.ground_truth 
+    gt = '{}-{}'.format(args.ground_truth, args.graph_ground_truth) if 'graph' in args.ground_truth else args.ground_truth 
     filename = os.path.join(stats_dir,'stats_{}_{}-gt.pickle'.format(normalized_str, gt))
     outf = open(filename, 'wb')
     pickle.dump(stats_out, outf)

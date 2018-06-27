@@ -12,7 +12,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from collections import OrderedDict
 
 parser = argparse.ArgumentParser(description='Stats visualizer')
-parser.add_argument('--ground-truth', type=str, choices=['proportional','atleastone','states'], default='proportional',
+parser.add_argument('--ground-truth', type=str, default='proportional',
                     help='how many images in the result')
 parser.add_argument('--aggregate', action='store_true', default=False,
                     help='enable max aggregation on multiple stats files')

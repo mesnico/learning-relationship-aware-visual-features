@@ -7,7 +7,7 @@ import cv2
 import os
 import argparse
 import numpy as np
-from order import rn_order, rmac_order, graphs_order, states_order
+from order import rn_order, rmac_order, graphs_order, states_order, graphs_approx_order
 from tqdm import tqdm, trange
 import math
 
@@ -35,7 +35,7 @@ def build_figure(orders, image_loader, query_idx, n=10, scale=1):
     separator = np.zeros(shape=(320,2,3))
 
     for o_idx,o in enumerate(orders):
-        _,ordered_dist,permut = o.get(query_idx)
+        _,ordered_dist,permut = o.get(query_idx, True)
         n_permut = permut[:n]
         row = []
         for idx,p in enumerate(n_permut):
@@ -79,7 +79,8 @@ if __name__ == '__main__':
     orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
         os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize))
     scene_json_filename = os.path.join(args.clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
-    orders.append(graphs_order.GraphsOrder(scene_json_filename, 'proportional', 2))
+    #orders.append(graphs_order.GraphsOrder(scene_json_filename, 'proportional', 2))
+    orders.append(graphs_approx_order.GraphsApproxOrder(scene_json_filename, 'proportional', 2))
     orders.append(states_order.StatesOrder(scene_json_filename, mode='fuzzy', ncpu=2))
 
     orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_sd.pickle'), 'g_fc2_avg state description', args.normalize))
