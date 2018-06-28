@@ -20,15 +20,8 @@ def max_min_length(orders_iterable):
     return (max(lengths), min(lengths))
 
 def build_feat_dict(orders_iterable, query_idx, min_length=0, include_query=False):
-    orderings = [o.get(query_idx, include_query) for o in orders_iterable]
+    orderings = [o.get(query_idx, include_query, min_length) for o in orders_iterable]
     names = [o.get_name() for o in orders_iterable]
-
-    start_idx = 0 #if include_query else 1
-    if min_length > 0:
-        #cut in order to have the same number of elements for all the orderings
-        orderings = [tuple(o[i][start_idx:min_length] for i in np.arange(3)) for o in orderings]
-    else:
-        orderings = [tuple(o[i][start_idx:] for i in range(3)) for o in orderings]
         
     d = {n:o for n,o in zip(names, orderings)}
 
