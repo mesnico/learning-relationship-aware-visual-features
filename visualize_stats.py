@@ -73,6 +73,9 @@ def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True
             conf = st.t.ppf((1+confidence)/2, len(values)-1) * sem
             neg_conf = conf if mean>conf or can_be_negative else mean
             y_errors.append([neg_conf,conf])
+            if name == 'spearmanr' and ('conv' in feat or ('g_fc4' in feat and not 'prenorm' in feat) or 'graph GT' in feat or 'RMAC' in feat):
+                f = feat.replace('\n',' ')
+                print('{} {} -  = {} +- {}'.format(f, typekey, mean, conf))
         all_means.append(mean_values)
         all_y_errors.append(y_errors)
         num_bars = len(feats)

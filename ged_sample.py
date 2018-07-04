@@ -1,175 +1,165 @@
-import matplotlib
-matplotlib.use('Agg')
-import networkx as nx
 import pickle
 import numpy as np
 import pdb
+import networkx as nx
+from order.AproximatedEditDistance import AproximatedEditDistance
 import json
-import os
-import cv2
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-from order import graphs_order
-from order import utils
-import random
+from order.order_base import OrderBase
+from order.parallel_dist import parallel_distances
 
-class ClevrImageLoader():
-    def __init__(self, images_dir):
-        self.images_dir = images_dir
+class ApproxGED(AproximatedEditDistance):
+    """
+        Vanilla Aproximated Edit distance, implements basic costs for substitution insertion and deletion.
+    """
+    def __init__(self, node_weight_mode='proportional'):
+        self.node_weight_mode = node_weight_mode
 
-    def get(self,index):
-        padded_index = str(index).rjust(6,'0')
-        img_filename = os.path.join(self.images_dir, 'val', 'CLEVR_val_{}.png'.format(padded_index))
-        image = cv2.imread(img_filename)
-        return image / 255.
+    """
+        Node edit operations
+    """
+    def node_substitution(self, g1, g2):
+        def node_subst_cost_proportional(uattr, vattr):
+            cost = 0
+            attributes = list(uattr.keys())
+            unit_cost = 1/len(attributes)
+            for attr in attributes:
+                if(uattr[attr] != vattr[attr]): cost=cost+unit_cost
+            return cost
 
-def load_graphs(scene_file):
-    clevr_scenes = json.load(open(scene_file))['scenes']
-    graphs = []
+        def node_subst_cost_atleastone(uattr, vattr):
+            cost = 0
+            attributes = list(uattr.keys())
+            for attr in attributes:
+                if(uattr[attr] != vattr[attr]): 
+                    cost=1
+                    break
+            return cost
+        """
+            Node substitution costs
+            :param g1, g2: Graphs whose nodes are being substituted
+            :return: Matrix with the substitution costs
+        """
+        if self.node_weight_mode == 'proportional':
+            node_subst_cost = node_subst_cost_proportional
+        elif self.node_weight_mode == 'atleastone':
+            node_subst_cost = node_subst_cost_atleastone
 
-    for scene in clevr_scenes:
-        graph = nx.MultiDiGraph()
-        #build graph nodes for every object
-        objs = scene['objects']
-        idx_pool = list(range(len(objs)))
-        random.shuffle(idx_pool)
-        for idx, obj in enumerate(objs):
-            graph.add_node(idx_pool[idx], color=obj['color'], shape=obj['shape'], material=obj['material'], size=obj['size'])
-        
-        relationships = scene['relationships']
-        for name, rel in relationships.items():
-            if name in ('right','front'):
-                for b_idx, row in enumerate(rel):
-                    for a_idx in row:
-                        graph.add_edge(a_idx, b_idx, relation=name)
+        m = len(g1.nodes)
+        n = len(g2.nodes)
+        c_mat = np.array([node_subst_cost(g1.nodes[u], g2.nodes[v])
+            for u in g1.nodes for v in g2.nodes]).reshape(m, n)
+        return c_mat
 
-        graphs.append(graph)
-    return graphs
+    def node_insertion(self, g):
+        """
+            Node Insertion costs
+            :param g: Graphs whose nodes are being inserted
+            :return: List with the insertion costs
+        """
+        values = [v for k, v in g.nodes(data=True)]
+        return [1]*len(values)
 
+    def node_deletion(self, g):
+        """
+            Node Deletion costs
+            :param g: Graphs whose nodes are being deleted
+            :return: List with the deletion costs
+        """
+        values = [v for k, v in g.nodes(data=True)]
+        return [1] * len(values)
 '''
-Calculates graph edit distance.
-If node_weight_mode == 'proportional', node substitution weights 1/n for every of the attributes not matching (n is total number of attributes)
-If node_weight_mode == 'atleastone', node substitution weights 1 is even only one attribute does not match
-'''
-def ged_paths(g1,g2,node_weight_mode='proportional'):
-    #need to incorporate edges attributes in order for ged edge costs to work correctly
-    for e, attr in g1.edges.items():
-    #pdb.set_trace()
-        attr['nodes'] = '{}-{}'.format(e[0],e[1])
-    for e, attr in g2.edges.items():
-        attr['nodes'] = '{}-{}'.format(e[0],e[1])
+    """
+        Edge edit operations
+    """
+    def edge_substitution(self, g1, g2):
+        """
+            Edge Substitution costs
+            :param g1, g2: Adjacency list for particular nodes.
+            :return: List of edge deletion costs
+        """
+        edge_dist = np.zeros((len(g1), len(g2)))
+        return edge_dist
 
-    def edge_subst_cost(gattr, hattr):
-        if (gattr['relation'] == hattr['relation']): # and (gattr['nodes'] == hattr['nodes'])):
-            return 0
+    def edge_insertion(self, g):
+        """
+            Edge insertion costs
+            :param g: Adjacency list.
+            :return: List of edge insertion costs
+        """
+        insert_edges = [len(e) for e in g]
+        return np.ones(len(insert_edges))
+
+    def edge_deletion(self, g):
+        """
+            Edge Deletion costs
+            :param g: Adjacency list.
+            :return: List of edge deletion costs
+        """
+        del_edges = [len(e) for e in g]
+        return np.ones(len(del_edges))
+'''
+
+#Calculates approximated graph edit distance.
+def load_graphs(basedir):
+    print('loading only the images...')
+    dirs = os.path.join(basedir,'data')
+    filename = os.path.join(dirs,'sort-of-clevr.pickle')
+    with open(filename, 'rb') as f:
+      train_datasets, test_datasets = pickle.load(f)
+
+    elems = []
+    for elem in train_datasets:
+        img = elem[0]
+        img = np.swapaxes(img,0,2)
+
+        #Append also the graph is present in the data
+        if len(elem)==3:
+            elems.append((img))
         else:
-            return 1
+            elems.append((img,elem[3]))
 
-    def node_subst_cost_proportional(uattr, vattr):
-        cost = 0
-        attributes = list(uattr.keys())
-        unit_cost = 1/len(attributes)
-        for attr in attributes:
-            if(uattr[attr] != vattr[attr]): cost=cost+unit_cost
-        return cost
+    for elem in test_datasets:
+        img = elem[0]
+        img = np.swapaxes(img,0,2)
 
-    def node_subst_cost_atleastone(uattr, vattr):
-        cost = 0
-        attributes = list(uattr.keys())
-        for attr in attributes:
-            if(uattr[attr] != vattr[attr]): 
-                cost=1
-                break
-        return cost
+        #Append also the graph is present in the data
+        if len(elem)==3:
+            elems.append((img))
+        else:
+            elems.append((img,elem[3]))
+    print('loaded {} images'.format(len(elems)))
+    #pdb.set_trace()
+    graphs = [e[1] for e in elems]
+    sep_graphs = [{'closest':g.copy(), 'farthest':g.copy()} for g in graphs]
+    for g_set in sep_graphs:
+        for k,g in g_set.items():
+            if k=='closest':
+                rem_edges = [k for k,v in nx.get_edge_attributes(g,'relation').items() if v=='farthest']
+                g.remove_edges_from(rem_edges)
+            elif k=='farthest':
+                rem_edges = [k for k,v in nx.get_edge_attributes(g,'relation').items() if v=='closest']
+                g.remove_edges_from(rem_edges)
+    return sep_graphs
 
-    if node_weight_mode == 'proportional':
-        node_subst_cost = node_subst_cost_proportional
-    elif node_weight_mode == 'atleastone':
-        node_subst_cost = node_subst_cost_atleastone
-    else:
-        raise ValueError('Node weight mode {} not known'.format(node_weight_mode))
+def ged(g1,g2,node_weight_mode='proportional'):
+        tot_cost = 0
+        approx_ged = ApproxGED(node_weight_mode)
+        for rel in ['closest','farthest']:
+            c, _ = approx_ged.ged(g1[rel], g2[rel])
+            tot_cost += c
 
-    return nx.optimal_edit_paths(g1, g2,
-         edge_subst_cost = edge_subst_cost,
-         node_subst_cost = node_subst_cost)
+        return tot_cost  
 
-if __name__ == '__main__':
-    clevr_scene = '../../../CLEVR_v1.0/scenes/CLEVR_val_scenes.json'
-    clevr_image = '../../../CLEVR_v1.0/images'
-    query_img = 6
-    mode = 'proportional'
-
-    order = graphs_order.GraphsOrder(clevr_scene, mode, 4)
-    _, ordered_dist, permuts = list(utils.build_feat_dict([order], query_img, include_query=True).values())[0]
-    print('First 10 distances: {}'.format(ordered_dist[:10]))
-    print('First 10 permuts:   {}'.format(permuts[:10]))
-    idx1 = permuts[0]
-    idx2 = permuts[4]
-    print('Idxs: {} and {}'.format(idx1, idx2))
-
-    graphs = graphs_order.GraphsOrder.graphs
-    #graphs = load_graphs(clevr_scene)
-    '''graphs = []
-    g1 = nx.MultiDiGraph()
-    eidx1=21
-    eidx2=7
-    eidx3=9
-    g1.add_node(eidx1, color='green', shape='cube', material='rubber', size='big')
-    g1.add_node(eidx2, color='yellow', shape='cube', material='metal', size='big')
-    g1.add_node(eidx3, color='gray', shape='sphere', material='rubber', size='small')
-    g1.add_edge(eidx1, eidx2, relation='left')
-    g1.add_edge(eidx1, eidx3, relation='left')
-    g1.add_edge(eidx3, eidx2, relation='left')
-    g1.add_edge(eidx1, eidx2, relation='front')
-    g1.add_edge(eidx3, eidx2, relation='front')
-    g1.add_edge(eidx3, eidx1, relation='front')
-    graphs.append(g1)
-
-    g2 = nx.MultiDiGraph()
-    eidx1=44
-    eidx2=45
-    eidx3=46
-    g2.add_node(eidx1, color='green', shape='cube', material='rubber', size='big')
-    g2.add_node(eidx2, color='yellow', shape='cube', material='metal', size='big')
-    g2.add_node(eidx3, color='gray', shape='sphere', material='rubber', size='small')
-    g2.add_edge(eidx1, eidx2, relation='left')
-    g2.add_edge(eidx1, eidx3, relation='left')
-    g2.add_edge(eidx3, eidx2, relation='left')
-    g2.add_edge(eidx1, eidx2, relation='front')
-    g2.add_edge(eidx3, eidx2, relation='front')
-    g2.add_edge(eidx3, eidx1, relation='front')
-    graphs.append(g2)
-
-    idx1 = 0
-    idx2 = 1'''
-
-    for _idx2 in permuts[:10]:
-        print(ged_paths(graphs[idx1], graphs[_idx2], mode))
-    #print(ged_paths(graphs[0], graphs[1], mode))
-
-    #visualize the two images
-    fig = plt.figure('Images Comparison', figsize=(10,10))
-    gs = gridspec.GridSpec(2, 2)
-
-    image_loader = ClevrImageLoader(clevr_image)
+#simple test
+import os
+if __name__ == "__main__":
+    clevr_dir = '../../../../CLEVR_v1.0'
+    idx1 = 2
+    idx2 = 2
     
-    img1_axs = plt.subplot(gs[0, 0])
-    img1_axs.set_title('img1')
-    img1_axs.imshow(image_loader.get(idx1))
-
-    img1_axs = plt.subplot(gs[0, 1])
-    img1_axs.set_title('img2')
-    img1_axs.imshow(image_loader.get(idx2))
-    
-    graph1_axs = plt.subplot(gs[1, 0])
-    nx.draw_networkx(graphs[idx1], ax=graph1_axs, font_size=8, labels=dict((n,'{}\n{}\n{}\n{}\n{}'.format(n,d['size'],d['color'],d['material'],d['shape'])) for n,d in graphs[idx1].nodes(data=True)))
-
-    graph2_axs = plt.subplot(gs[1, 1])
-    nx.draw_networkx(graphs[idx2], ax=graph2_axs, font_size=8, labels=dict((n,'{}\n{}\n{}\n{}\n{}'.format(n,d['size'],d['color'],d['material'],d['shape'])) for n,d in graphs[idx2].nodes(data=True)))
-
-    plt.savefig('imgs.png')
-    
-
-    
-    
-    
+    scene_json_filename = os.path.join(clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
+    graphs = load_graphs('./')
+    g1 = graphs[idx1]
+    g2 = graphs[idx2]
+    dist = ged(g1,g2)
+    print (dist)

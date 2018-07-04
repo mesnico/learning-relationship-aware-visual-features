@@ -12,11 +12,19 @@ class RNOrder(OrderBase):
             self.rn_feats = utils.normalized(self.rn_feats, 1)
         self.name = name
 
-    def load_features(self,  filename):
+    '''def load_features(self,  filename):
         f = open(filename, 'rb')
         features = pickle.load(f)
         features = [f[1] for f in features]
         features = np.vstack(features)
+        print('processed #{} features each of size {}'.format(features.shape[0], features.shape[1]))
+        return features'''
+
+    def load_features(self,  filename):
+        f = open(filename, 'rb')
+        features = pickle.load(f)
+        #features = [f[1] for f in features]
+        #features = np.vstack(features)
         print('processed #{} features each of size {}'.format(features.shape[0], features.shape[1]))
         return features
     

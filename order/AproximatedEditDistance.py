@@ -87,7 +87,7 @@ class AproximatedEditDistance(GraphEditDistance):
     def ged(self, g1, g2):
 
         # Compute cost matrix
-        cost_matrix = self.cost_matrix(g1, g2)        
+        cost_matrix = self.cost_matrix(g1, g2)       
 
         # Munkres algorithm
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
@@ -97,7 +97,8 @@ class AproximatedEditDistance(GraphEditDistance):
         for (n1,n2) in g1.edges:
             i1, i2 = list(row_ind).index(n1), list(row_ind).index(n2)
             g2_corresp_inv_edge = (col_ind[i2],col_ind[i1])
-            if g2_corresp_inv_edge in g2.edges:
+            g2_corresp_edge = (col_ind[i1],col_ind[i2])
+            if not g2_corresp_edge in g2.edges and g2_corresp_inv_edge in g2.edges:
                 inv_cost += 1 #TODO: make this inversion cost a variable
 
         # Graph edit distance

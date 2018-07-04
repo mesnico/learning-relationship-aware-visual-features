@@ -10,34 +10,44 @@ from .parallel_dist import parallel_distances
 class GraphsOrder(OrderBase):
     graphs = None
 
-    def __init__(self, scene_file, gt='proportional', ncpu=4):
+    def __init__(self, gt='proportional', ncpu=4):
         super().__init__()
         if not GraphsOrder.graphs:
             print('Building graphs from JSON...')
-            GraphsOrder.graphs = self.load_graphs(scene_file)
+            GraphsOrder.graphs = self.load_graphs('./')
         self.gt = gt
         self.ncpu = ncpu
 
-    def load_graphs(self,scene_file):
-        clevr_scenes = json.load(open(scene_file))['scenes']
-        graphs = []
+    def load_graphs(self,basedir):
+        print('loading only the images...')
+        dirs = os.path.join(basedir,'data')
+        filename = os.path.join(dirs,'sort-of-clevr.pickle')
+        with open(filename, 'rb') as f:
+          train_datasets, test_datasets = pickle.load(f)
 
-        for scene in clevr_scenes:
-            graph = nx.MultiDiGraph()
-            #build graph nodes for every object
-            objs = scene['objects']
-            for idx, obj in enumerate(objs):
-                graph.add_node(idx, color=obj['color'], shape=obj['shape'], material=obj['material'], size=obj['size'])
-            
-            relationships = scene['relationships']
-            for name, rel in relationships.items():
-                if name in ('right','front'):
-                    for b_idx, row in enumerate(rel):
-                        for a_idx in row:
-                            graph.add_edge(a_idx, b_idx, relation=name)
+        elems = []
+        for elem in train_datasets:
+            img = elem[0]
+            img = np.swapaxes(img,0,2)
 
-            graphs.append(graph)
-        return graphs
+            #Append also the graph is present in the data
+            if len(elem)==3:
+                elems.append((img))
+            else:
+                elems.append((img,elem[3]))
+
+        for elem in test_datasets:
+            img = elem[0]
+            img = np.swapaxes(img,0,2)
+
+            #Append also the graph is present in the data
+            if len(elem)==3:
+                elems.append((img))
+            else:
+                elems.append((img,elem[3]))
+        print('loaded {} images'.format(len(elems)))
+        
+        return [e[1] for e in elems]
 
     '''
     Calculates graph edit distance.

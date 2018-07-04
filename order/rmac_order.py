@@ -13,14 +13,9 @@ class RMACOrder(OrderBase):
 
     def load_rmac_features(self, feat_filename, feat_order_filename):
         features = h5py.File(feat_filename, 'r')['/rmac']
-        img_names = open(feat_order_filename, 'r').readlines()
-        
-        assert len(features) == len(img_names)
 
-        #takes only val features
-        filtered = [feat for feat, name in zip(features, img_names) if 'val' in name]
-        filtered = np.vstack(filtered)
-        return filtered
+        features = np.vstack(features)
+        return features
 
     def compute_distances(self, query_img_index):
         query_feat = self.rmac_feats[query_img_index]

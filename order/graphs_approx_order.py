@@ -102,45 +102,61 @@ class ApproxGED(AproximatedEditDistance):
 class GraphsApproxOrder(OrderBase):
     graphs = None
 
-    def __init__(self, scene_file, gt='proportional', ncpu=4):
+    def __init__(self, gt='proportional', ncpu=4):
         super().__init__()
         if not GraphsApproxOrder.graphs:
             print('Building graphs from JSON...')
-            GraphsApproxOrder.graphs = self.load_graphs(scene_file)
+            GraphsApproxOrder.graphs = self.load_graphs('./')
         self.gt = gt
         self.ncpu = ncpu
 
-    def load_graphs(self,scene_file):
-        clevr_scenes = json.load(open(scene_file))['scenes']
-        graphs = []
+    #Calculates approximated graph edit distance.
+    def load_graphs(self,basedir):
+        print('loading only the images...')
+        dirs = os.path.join(basedir,'data')
+        filename = os.path.join(dirs,'sort-of-clevr.pickle')
+        with open(filename, 'rb') as f:
+          train_datasets, test_datasets = pickle.load(f)
 
-        for scene in clevr_scenes:
-            graph = {}
-            graph['right'] = nx.DiGraph()
-            graph['front'] = nx.DiGraph()
-            #build graph nodes for every object
-            objs = scene['objects']
-            for idx, obj in enumerate(objs):
-                for _,g in graph.items():
-                    g.add_node(idx, color=obj['color'], shape=obj['shape'], material=obj['material'], size=obj['size'])
-            
-            relationships = scene['relationships']
-            for name, rel in relationships.items():
-                if name in ('right','front'):
-                    for b_idx, row in enumerate(rel):
-                        for a_idx in row:
-                            graph[name].add_edge(a_idx, b_idx)
+        elems = []
+        for elem in train_datasets:
+            img = elem[0]
+            img = np.swapaxes(img,0,2)
 
-            graphs.append(graph)
-        return graphs
+            #Append also the graph is present in the data
+            if len(elem)==3:
+                elems.append((img))
+            else:
+                elems.append((img,elem[3]))
 
-    '''
-    Calculates approximated graph edit distance.
-    '''
+        for elem in test_datasets:
+            img = elem[0]
+            img = np.swapaxes(img,0,2)
+
+            #Append also the graph is present in the data
+            if len(elem)==3:
+                elems.append((img))
+            else:
+                elems.append((img,elem[3]))
+        print('loaded {} images'.format(len(elems)))
+        #pdb.set_trace()
+        graphs = [e[1] for e in elems]
+        sep_graphs = [{'closest':g.copy(), 'farthest':g.copy()} for g in graphs]
+        for g_set in sep_graphs:
+            for k,g in g_set.items():
+                if k=='closest':
+                    rem_edges = [k for k,v in nx.get_edge_attributes(g,'relation').items() if v=='farthest']
+                    g.remove_edges_from(rem_edges)
+                elif k=='farthest':
+                    rem_edges = [k for k,v in nx.get_edge_attributes(g,'relation').items() if v=='closest']
+                    g.remove_edges_from(rem_edges)
+        return sep_graphs
+
+
     def ged(self,g1,g2,node_weight_mode='proportional'):
         tot_cost = 0
-        approx_ged = ApproxGED(self.gt)
-        for rel in ['right','front']:
+        approx_ged = ApproxGED(node_weight_mode)
+        for rel in ['closest','farthest']:
             c, _ = approx_ged.ged(g1[rel], g2[rel])
             tot_cost += c
 
