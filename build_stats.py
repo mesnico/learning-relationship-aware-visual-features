@@ -112,9 +112,13 @@ if __name__ == '__main__':
     print('Initializing feature order objects...')
     feats_orders = []
     #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_sd.pickle'), 'g_fc2\navg sd', args.normalize))
-    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc3_avg_features_fp.pickle'), 'g_fc3\navg fp', args.normalize))
     #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_sd.pickle'), 'g_fc2\nmax sd', args.normalize))
-    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc3_max_features_fp.pickle'), 'g_fc3\nmax fp', args.normalize))
+    #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_sd.pickle'), 'g_fc2\navg sd', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize))
+    #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_sd.pickle'), 'g_fc2\nmax sd', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize))
     #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_avg_features_sd.pickle'), 'g_fc1\navg sd', args.normalize))
     feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_avg_features_fp.pickle'), 'g_fc1\navg fp', args.normalize))
     #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_max_features_sd.pickle'), 'g_fc1\nmax sd', args.normalize))
@@ -126,8 +130,10 @@ if __name__ == '__main__':
     feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'afteraggr_features_sd.pickle'), 'afteraggr\nsd', args.normalize))
     feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'afteraggr-no-prenorm_features_sd.pickle'), 'afteraggr\nsd\nno-prenorm', args.normalize))
     
-    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_avg_features_original_fp.pickle'), 'conv\navg fp\noriginal', args.normalize))
-    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_max_features_original_fp.pickle'), 'conv\nmax fp\noriginal', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_avg_features_orig.pickle'), 'conv\navg fp\noriginal', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_max_features_orig.pickle'), 'conv\nmax fp\noriginal', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_avg_features_orig_noprenorm.pickle'), 'conv\navg fp\noriginal\nno prenorm', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_max_features_orig_noprenorm.pickle'), 'conv\nmax fp\noriginal\nno prenorm', args.normalize))
     feats_orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
         os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize))
     
@@ -135,9 +141,9 @@ if __name__ == '__main__':
     scene_json_filename = os.path.join(args.clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
     print('Initializing ground truth...')
     gt_orders = {}
-    gt_orders['graph'] = graphs_order.GraphsOrder(scene_json_filename, args.graph_ground_truth, args.cpus)
+    #gt_orders['graph'] = graphs_order.GraphsOrder(scene_json_filename, args.graph_ground_truth, args.cpus)
     gt_orders['graph-approx'] = graphs_approx_order.GraphsApproxOrder(scene_json_filename, args.graph_ground_truth, args.cpus)
-    gt_orders['states'] = states_order.StatesOrder(scene_json_filename, mode='fuzzy', ncpu=args.cpus)
+    #gt_orders['states'] = states_order.StatesOrder(scene_json_filename, mode='fuzzy', ncpu=args.cpus)
     
     found_gt = False
     for k in list(gt_orders.keys()):

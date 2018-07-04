@@ -34,6 +34,8 @@ def build_figure(orders, image_loader, query_idx, n=10, scale=1):
     query_axs.imshow(image_loader.get(query_idx))
     separator = np.zeros(shape=(320,5,3))
 
+    tmp_dic = {'graph GT\n(proportional)\napprox':'Ground-truth', 'g_fc2\navg fp':'Two-stage RN', 'RMAC':'RMAC'}
+
     for o_idx,o in enumerate(orders):
         _,ordered_dist,permut = o.get(query_idx, False)
         n_permut = permut[:n]
@@ -47,12 +49,14 @@ def build_figure(orders, image_loader, query_idx, n=10, scale=1):
             else:
                 row = np.concatenate((row, image, separator), axis=1)
         axs = plt.subplot(gs[o_idx+1, 0])
-        axs.set_title(o.get_name(), loc='left')
+        axs.set_title(tmp_dic[o.get_name()], loc='left')
         axs.set_yticklabels([])
         x = np.arange(240,480*n-230,480)
         labels = ['{:.5e}'.format(d) for d in ordered_dist[:n]]
-        axs.set_xticks(x)
-        axs.set_xticklabels(labels)
+        #axs.set_xticks(x)
+        #axs.set_xticklabels(labels)
+        axs.set_xticks([])
+        axs.set_xticklabels([])
         axs.imshow(row)
     
     return fig
@@ -84,9 +88,9 @@ if __name__ == '__main__':
     orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
         os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize))
     
-    orders.append(graphs_order.GraphsOrder(scene_json_filename, 'proportional', 2))
+    #orders.append(graphs_order.GraphsOrder(scene_json_filename, 'proportional', 2))
     
-    orders.append(states_order.StatesOrder(scene_json_filename, mode='fuzzy', ncpu=2))
+    #orders.append(states_order.StatesOrder(scene_json_filename, mode='fuzzy', ncpu=2))
 
     #orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_sd.pickle'), 'g_fc2_avg state description', args.normalize))
     
@@ -98,6 +102,7 @@ if __name__ == '__main__':
         progress = trange(args.from_idx, args.to_idx+1)
         for idx in progress:
             fig = build_figure(orders, img_loader, idx, args.n, args.scale)
+            plt.savefig('img_out.png')
             pdf.savefig(fig)    
     
             
