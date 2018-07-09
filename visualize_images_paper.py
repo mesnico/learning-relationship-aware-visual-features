@@ -22,7 +22,7 @@ class ClevrImageLoader():
         return image / 255.
 
 def build_figure(orders, image_loader, query_idx, n=10, scale=1):
-    size = (math.ceil(4*n*scale), math.ceil(3*(len(orders)+1)*scale)+3)
+    size = (math.ceil(4*n*scale), math.ceil(3*(len(orders)+1)*scale))
 
     fig = plt.figure('Query idx {}'.format(query_idx), figsize=size)
     gs = gridspec.GridSpec(len(orders)+1, 1)
@@ -32,16 +32,19 @@ def build_figure(orders, image_loader, query_idx, n=10, scale=1):
     #query_swim = np.swapaxes(query_img,0,2)
     query_axs.set_title('Query Image')
     query_axs.imshow(image_loader.get(query_idx))
+    query_axs.set_xticks([])
+    query_axs.set_xticklabels([])
+    query_axs.set_yticklabels([])
     separator = np.zeros(shape=(320,5,3))
 
-    tmp_dic = {'graph GT\n(proportional)\napprox':'Ground-truth', 'g_fc2\navg fp':'Two-stage RN', 'RMAC':'RMAC'}
+    tmp_dic = {'graph GT\n(proportional)\napprox':'Approx\nGED', 'g_fc2\navg fp':'2S-RN', 'RMAC':'RMAC'}
 
     for o_idx,o in enumerate(orders):
         _,ordered_dist,permut = o.get(query_idx, False)
         n_permut = permut[:n]
         row = []
-        n_permut_v = [v + 1 for v in n_permut]
-        for idx,p in enumerate(n_permut_v):
+        #n_permut_v = [v + 1 for v in n_permut]
+        for idx,p in enumerate(n_permut):
             image = image_loader.get(p)
             if idx == 0:
                 row = image
@@ -49,7 +52,8 @@ def build_figure(orders, image_loader, query_idx, n=10, scale=1):
             else:
                 row = np.concatenate((row, image, separator), axis=1)
         axs = plt.subplot(gs[o_idx+1, 0])
-        axs.set_title(tmp_dic[o.get_name()], loc='left')
+        #axs.set_title(tmp_dic[o.get_name()], loc='left')
+        axs.set_ylabel(tmp_dic[o.get_name()], labelpad=17, rotation='horizontal')
         axs.set_yticklabels([])
         x = np.arange(240,480*n-230,480)
         labels = ['{:.5e}'.format(d) for d in ordered_dist[:n]]

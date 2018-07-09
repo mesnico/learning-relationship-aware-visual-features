@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pdb
 import networkx as nx
-from scipy.stats import spearmanr 
+from scipy.stats import spearmanr, kendalltau
 import math
 import time
 from order import rn_order, rmac_order, graphs_order, states_order, graphs_approx_order
@@ -41,12 +41,11 @@ def compute_ranks(feat_orders, gt_order, query_img_index, include_query=False):
     dist_gt, _, perm_gt = list(gt_distance.values())[0]
 
     for name, (dist, _, permut) in feat_distances.items():
-        #pdb.set_trace()
-
         #calculate stats for every feature
         k_logscale = {k:recall_at(permut, perm_gt, k) for k in k_logscale_axis}
         
         stat_indexes.append({'label': name,
+                    'kendall-tau': kendalltau(dist, dist_gt)[0],
                     'spearmanr': spearmanr(dist, dist_gt)[0],
                     'nDCG': metrics.ndcg_from_ranking(max(dist_gt) - dist_gt, permut[:500]),
                     'recall-at-10': recall_at(permut, perm_gt, 10),
@@ -58,11 +57,12 @@ def compute_ranks(feat_orders, gt_order, query_img_index, include_query=False):
 
 def print_stats(stats, gt, idx):
     for stat in stats:
-        print('## Query idx: {} ## - Correlation among {} and actual GT: {}\n\tspearman-rho: {}\n\tnDCG: {}\n\trecall-at-10: {}\n\trecall-at-100: {}\n\trecall-at-1000: {}'.format(
+        print('## Query idx: {} ## - Correlation among {} and actual GT: {}\n\tspearman-rho: {}\n\tkendall-tau: {}\n\tnDCG: {}\n\trecall-at-10: {}\n\trecall-at-100: {}\n\trecall-at-1000: {}'.format(
             idx,
             stat['label'],
             gt,
             stat['spearmanr'],
+            stat['kendall-tau'],
             stat['nDCG'],
             stat['recall-at-10'],
             stat['recall-at-100'],
@@ -119,21 +119,35 @@ if __name__ == '__main__':
     feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize))
     #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_sd.pickle'), 'g_fc2\nmax sd', args.normalize))
     feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp\nlsh 256bit', args.normalize, True))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp\nlsh 256bit', args.normalize, True))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp\nlsh 128bit', args.normalize, True,128))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp\nlsh 128bit', args.normalize, True,128))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp\nlsh 512bit', args.normalize, True, 512))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp\nlsh 512bit', args.normalize, True, 512))
     #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_avg_features_sd.pickle'), 'g_fc1\navg sd', args.normalize))
     feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_avg_features_fp.pickle'), 'g_fc1\navg fp', args.normalize))
     #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_max_features_sd.pickle'), 'g_fc1\nmax sd', args.normalize))
     feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_max_features_fp.pickle'), 'g_fc1\nmax fp', args.normalize))
     #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_conv_sd.pickle'), 'conv\navg sd', args.normalize))
-    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_conv_fp.pickle'), 'conv\navg fp', args.normalize))
+    #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_conv_fp.pickle'), 'conv\navg fp', args.normalize))
     #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_conv_sd.pickle'), 'conv\nmax sd', args.normalize))
-    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_conv_fp.pickle'), 'conv\nmax fp', args.normalize))
+    #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_conv_fp.pickle'), 'conv\nmax fp', args.normalize))
+
     feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'afteraggr_features_sd.pickle'), 'afteraggr\nsd', args.normalize))
     feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'afteraggr-no-prenorm_features_sd.pickle'), 'afteraggr\nsd\nno-prenorm', args.normalize))
-    
     feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_avg_features_orig.pickle'), 'conv\navg fp\noriginal', args.normalize))
     feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_max_features_orig.pickle'), 'conv\nmax fp\noriginal', args.normalize))
     feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_avg_features_orig_noprenorm.pickle'), 'conv\navg fp\noriginal\nno prenorm', args.normalize))
     feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_max_features_orig_noprenorm.pickle'), 'conv\nmax fp\noriginal\nno prenorm', args.normalize))
+
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_avg_features_orig.pickle'), 'conv\navg fp\noriginal\n512bit', args.normalize,True, 512))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_max_features_orig.pickle'), 'conv\nmax fp\noriginal\n512bit', args.normalize,True, 512))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_avg_features_orig_noprenorm.pickle'), 'conv\navg fp\noriginal\nno prenorm\n512bit', args.normalize, True, 512))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_max_features_orig_noprenorm.pickle'), 'conv\nmax fp\noriginal\nno prenorm\n512bit', args.normalize, True, 512))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'afteraggr_features_sd.pickle'), 'afteraggr\nsd 512bit', args.normalize, True, 512))
+    feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'afteraggr-no-prenorm_features_sd.pickle'), 'afteraggr\nsd\nno-prenorm\n512bit', args.normalize, True, 512))
+
     feats_orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
         os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize))
     

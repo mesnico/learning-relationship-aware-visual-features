@@ -23,6 +23,8 @@ class OrderBase(ABC):
                 self.__distances = np.delete(self.__distances, query_idx)
             self.__ordered_distances = np.sort(self.__distances)
             self.__permuts = np.argsort(self.__distances, kind='mergesort')
+            if not include_query:
+                self.__permuts = [n+1 if n>=query_idx else n for n in self.__permuts]
             self.old_query_idx = query_idx
         return (self.__distances, self.__ordered_distances, self.__permuts)
 
