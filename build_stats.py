@@ -114,6 +114,7 @@ if __name__ == '__main__':
     #initialize orders objects
     print('Initializing feature order objects...')
     feats_orders = []
+    how_many=15000
 
     if args.set == 'test':
         ### FROM TEST SET ###
@@ -133,7 +134,6 @@ if __name__ == '__main__':
 
     elif args.set == 'train':
         ### FROM TRAIN ###
-        how_many=15000
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize, how_many))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize, how_many))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_avg_features_fp.pickle'), 'g_fc1\navg fp', args.normalize, how_many))
@@ -158,11 +158,10 @@ if __name__ == '__main__':
         os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize, how_many, args.set, 'pca'))
     
     #initialize ground truth
-    scene_json_filename = os.path.join(args.clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
     print('Initializing ground truth...')
     gt_orders = {}
     #gt_orders['graph'] = graphs_order.GraphsOrder(scene_json_filename, args.graph_ground_truth, args.cpus)
-    gt_orders['graph-approx'] = graphs_approx_order.GraphsApproxOrder(scene_json_filename, args.graph_ground_truth, args.set, args.cpus)
+    gt_orders['graph-approx'] = graphs_approx_order.GraphsApproxOrder(args.clevr_dir, args.graph_ground_truth, how_many, args.set, args.cpus)
     #gt_orders['states'] = states_order.StatesOrder(scene_json_filename, mode='fuzzy', ncpu=args.cpus)
     
     found_gt = False

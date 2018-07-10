@@ -102,17 +102,21 @@ class ApproxGED(AproximatedEditDistance):
 class GraphsApproxOrder(OrderBase):
     graphs = None
 
-    def __init__(self, scene_file, gt='proportional', st='test', ncpu=4):
+    def __init__(self, clevr_dir, gt='proportional', how_many=15000, st='test', ncpu=4):
         super().__init__()
+
+        s = 'val' if st=='test' else st
+        scene_file = os.path.join(clevr_dir, 'scenes', 'CLEVR_{}_scenes.json'.format(s))
         if not GraphsApproxOrder.graphs:
-            print('Building graphs from JSON...')
-            GraphsApproxOrder.graphs = self.load_graphs(scene_file)
+            print('Building graphs from JSON from {}...'.format(s))
+            GraphsApproxOrder.graphs = self.load_graphs(scene_file, how_many)
         self.gt = gt
         self.st = st
         self.ncpu = ncpu
 
-    def load_graphs(self,scene_file):
+    def load_graphs(self,scene_file, how_many):
         clevr_scenes = json.load(open(scene_file))['scenes']
+        clevr_scenes = clevr_scenes[:how_many]
         graphs = []
 
         for scene in clevr_scenes:
