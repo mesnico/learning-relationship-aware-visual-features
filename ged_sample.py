@@ -12,6 +12,7 @@ import matplotlib.gridspec as gridspec
 from order import graphs_order
 from order import utils
 import random
+import pdb
 
 class ClevrImageLoader():
     def __init__(self, images_dir):
@@ -41,7 +42,10 @@ def load_graphs(scene_file):
             if name in ('right','front'):
                 for b_idx, row in enumerate(rel):
                     for a_idx in row:
-                        graph.add_edge(a_idx, b_idx, relation=name)
+                        attr_a = str(list(graph.node[a_idx].values()))
+                        attr_b = str(list(graph.node[b_idx].values()))
+                        h = hash('{}-{}'.format(attr_a, attr_b))
+                        graph.add_edge(a_idx, b_idx, relation=name, nodes=h)
 
         graphs.append(graph)
     return graphs
@@ -53,17 +57,17 @@ If node_weight_mode == 'atleastone', node substitution weights 1 is even only on
 '''
 def ged_paths(g1,g2,node_weight_mode='proportional'):
     #need to incorporate edges attributes in order for ged edge costs to work correctly
-    for e, attr in g1.edges.items():
-    #pdb.set_trace()
+    '''for e, attr in g1.edges.items():
+        pdb.set_trace()
         attr['nodes'] = '{}-{}'.format(e[0],e[1])
     for e, attr in g2.edges.items():
-        attr['nodes'] = '{}-{}'.format(e[0],e[1])
+        attr['nodes'] = '{}-{}'.format(e[0],e[1])'''
 
     def edge_subst_cost(gattr, hattr):
-        if (gattr['relation'] == hattr['relation']): # and (gattr['nodes'] == hattr['nodes'])):
+        if (gattr['relation'] == hattr['relation']):# and (gattr['nodes'] == hattr['nodes']):
             return 0
         else:
-            return 1
+            return -1
 
     def node_subst_cost_proportional(uattr, vattr):
         cost = 0
@@ -99,17 +103,23 @@ if __name__ == '__main__':
     query_img = 6
     mode = 'proportional'
 
-    order = graphs_order.GraphsOrder(clevr_scene, mode, 4)
+    '''order = graphs_order.GraphsOrder(clevr_scene, mode, 4)
     _, ordered_dist, permuts = list(utils.build_feat_dict([order], query_img, include_query=True).values())[0]
     print('First 10 distances: {}'.format(ordered_dist[:10]))
     print('First 10 permuts:   {}'.format(permuts[:10]))
     idx1 = permuts[0]
     idx2 = permuts[4]
-    print('Idxs: {} and {}'.format(idx1, idx2))
+    print('Idxs: {} and {}'.format(idx1, idx2))'''
 
-    graphs = graphs_order.GraphsOrder.graphs
+    #graphs = graphs_order.GraphsOrder.graphs
     #graphs = load_graphs(clevr_scene)
-    '''graphs = []
+    def calc_hash(g, a_idx, b_idx):
+        attr_a = str(list(g.node[a_idx].values()))
+        attr_b = str(list(g.node[b_idx].values()))
+        h = hash('{}-{}'.format(attr_a, attr_b))
+        return h
+
+    graphs = []
     g1 = nx.MultiDiGraph()
     eidx1=21
     eidx2=7
@@ -117,12 +127,12 @@ if __name__ == '__main__':
     g1.add_node(eidx1, color='green', shape='cube', material='rubber', size='big')
     g1.add_node(eidx2, color='yellow', shape='cube', material='metal', size='big')
     g1.add_node(eidx3, color='gray', shape='sphere', material='rubber', size='small')
-    g1.add_edge(eidx1, eidx2, relation='left')
-    g1.add_edge(eidx1, eidx3, relation='left')
-    g1.add_edge(eidx3, eidx2, relation='left')
-    g1.add_edge(eidx1, eidx2, relation='front')
-    g1.add_edge(eidx3, eidx2, relation='front')
-    g1.add_edge(eidx3, eidx1, relation='front')
+    g1.add_edge(eidx2, eidx1, relation='left', nodes=calc_hash(g1,eidx2, eidx1))
+    g1.add_edge(eidx1, eidx3, relation='left', nodes=calc_hash(g1,eidx1, eidx3))
+    g1.add_edge(eidx3, eidx2, relation='left', nodes=calc_hash(g1,eidx3, eidx2))
+    g1.add_edge(eidx1, eidx2, relation='front', nodes=calc_hash(g1,eidx1, eidx2))
+    g1.add_edge(eidx3, eidx2, relation='front', nodes=calc_hash(g1,eidx3, eidx2))
+    g1.add_edge(eidx3, eidx1, relation='front', nodes=calc_hash(g1,eidx3, eidx1))
     graphs.append(g1)
 
     g2 = nx.MultiDiGraph()
@@ -132,20 +142,20 @@ if __name__ == '__main__':
     g2.add_node(eidx1, color='green', shape='cube', material='rubber', size='big')
     g2.add_node(eidx2, color='yellow', shape='cube', material='metal', size='big')
     g2.add_node(eidx3, color='gray', shape='sphere', material='rubber', size='small')
-    g2.add_edge(eidx1, eidx2, relation='left')
-    g2.add_edge(eidx1, eidx3, relation='left')
-    g2.add_edge(eidx3, eidx2, relation='left')
-    g2.add_edge(eidx1, eidx2, relation='front')
-    g2.add_edge(eidx3, eidx2, relation='front')
-    g2.add_edge(eidx3, eidx1, relation='front')
+    g2.add_edge(eidx2, eidx1, relation='left', nodes=calc_hash(g2,eidx2, eidx1))
+    g2.add_edge(eidx1, eidx3, relation='left', nodes=calc_hash(g2,eidx1, eidx3))
+    g2.add_edge(eidx3, eidx2, relation='left', nodes=calc_hash(g2,eidx3, eidx2))
+    g2.add_edge(eidx1, eidx2, relation='front', nodes=calc_hash(g2,eidx1, eidx2))
+    g2.add_edge(eidx3, eidx2, relation='front', nodes=calc_hash(g2,eidx3, eidx2))
+    g2.add_edge(eidx3, eidx1, relation='front', nodes=calc_hash(g2,eidx3, eidx1))
     graphs.append(g2)
 
     idx1 = 0
-    idx2 = 1'''
+    idx2 = 1
 
-    for _idx2 in permuts[:10]:
-        print(ged_paths(graphs[idx1], graphs[_idx2], mode))
-    #print(ged_paths(graphs[0], graphs[1], mode))
+    #for _idx2 in permuts[:10]:
+    #    print(ged_paths(graphs[idx1], graphs[_idx2], mode))
+    print(ged_paths(graphs[0], graphs[1], mode))
 
     #visualize the two images
     fig = plt.figure('Images Comparison', figsize=(10,10))

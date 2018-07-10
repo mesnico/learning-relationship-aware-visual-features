@@ -102,12 +102,13 @@ class ApproxGED(AproximatedEditDistance):
 class GraphsApproxOrder(OrderBase):
     graphs = None
 
-    def __init__(self, scene_file, gt='proportional', ncpu=4):
+    def __init__(self, scene_file, gt='proportional', st='test', ncpu=4):
         super().__init__()
         if not GraphsApproxOrder.graphs:
             print('Building graphs from JSON...')
             GraphsApproxOrder.graphs = self.load_graphs(scene_file)
         self.gt = gt
+        self.st = st
         self.ncpu = ncpu
 
     def load_graphs(self,scene_file):
@@ -147,7 +148,7 @@ class GraphsApproxOrder(OrderBase):
         return tot_cost
 
     def compute_distances(self, query_img_index):
-        return parallel_distances('ged-approx-{}'.format(self.gt), self.graphs, query_img_index, self.ged, kwargs={'node_weight_mode':self.gt}, ncpu=self.ncpu)
+        return parallel_distances('ged-approx-{}-{}'.format(self.gt, self.st), self.graphs, query_img_index, self.ged, kwargs={'node_weight_mode':self.gt}, ncpu=self.ncpu)
         #query_graph = self.graphs[query_img_index]
         #return [self.ged(query_graph, g) for g in self.graphs]
 
