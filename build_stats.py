@@ -117,6 +117,7 @@ if __name__ == '__main__':
     how_many=15000
 
     if args.set == 'test':
+        #TODO: check arguments to all functions in test
         ### FROM TEST SET ###
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc3_avg_features_fp.pickle'), 'g_fc3\navg fp', args.normalize))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc3_max_features_fp.pickle'), 'g_fc3\nmax fp', args.normalize))
@@ -134,20 +135,41 @@ if __name__ == '__main__':
 
     elif args.set == 'train':
         ### FROM TRAIN ###
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize, how_many))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize, how_many))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_avg_features_fp.pickle'), 'g_fc1\navg fp', args.normalize, how_many))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_max_features_fp.pickle'), 'g_fc1\nmax fp', args.normalize, how_many))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc0_avg_features_fp_orig.pickle'), 'conv\navg fp\noriginal', args.normalize, how_many))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc0_max_features_fp_orig.pickle'), 'conv\nmax fp\noriginal', args.normalize, how_many))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize, how_many, args.set))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize, how_many, args.set))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_avg_features_fp.pickle'), 'g_fc1\navg fp', args.normalize, how_many, args.set))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_max_features_fp.pickle'), 'g_fc1\nmax fp', args.normalize, how_many, args.set))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc0_avg_features_fp_orig.pickle'), 'conv\navg fp\noriginal', args.normalize, how_many, args.set))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc0_max_features_fp_orig.pickle'), 'conv\nmax fp\noriginal', args.normalize, how_many, args.set))
 
         # WITH PCA#
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize, how_many, 'pca'))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize, how_many, 'pca'))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_avg_features_fp.pickle'), 'g_fc1\navg fp', args.normalize, how_many, 'pca'))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_max_features_fp.pickle'), 'g_fc1\nmax fp', args.normalize, how_many, 'pca'))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc0_avg_features_fp_orig.pickle'), 'conv\navg fp\noriginal', args.normalize, how_many, 'pca'))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc0_max_features_fp_orig.pickle'), 'conv\nmax fp\noriginal', args.normalize, how_many, 'pca'))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize, how_many, args.set, 'pca'))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize, how_many, args.set, 'pca'))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_avg_features_fp.pickle'), 'g_fc1\navg fp', args.normalize, how_many, args.set, 'pca'))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_max_features_fp.pickle'), 'g_fc1\nmax fp', args.normalize, how_many, args.set, 'pca'))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc0_avg_features_fp_orig.pickle'), 'conv\navg fp\noriginal', args.normalize, how_many, args.set, 'pca'))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc0_max_features_fp_orig.pickle'), 'conv\nmax fp\noriginal', args.normalize, how_many, args.set, 'pca'))
+
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize, how_many, args.set, 'pca', pca_dims=32))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize, how_many, args.set, 'pca', pca_dims=32))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_avg_features_fp.pickle'), 'g_fc1\navg fp', args.normalize, how_many, args.set, 'pca', pca_dims=32))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_max_features_fp.pickle'), 'g_fc1\nmax fp', args.normalize, how_many, args.set, 'pca', pca_dims=32))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc0_avg_features_fp_orig.pickle'), 'conv\navg fp\noriginal', args.normalize, how_many, args.set, 'pca', pca_dims=16))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc0_max_features_fp_orig.pickle'), 'conv\nmax fp\noriginal', args.normalize, how_many, args.set, 'pca', pca_dims=16))
+
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize, how_many, args.set, 'pca', pca_dims=16))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize, how_many, args.set, 'pca', pca_dims=16))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_avg_features_fp.pickle'), 'g_fc1\navg fp', args.normalize, how_many, args.set, 'pca', pca_dims=16))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_max_features_fp.pickle'), 'g_fc1\nmax fp', args.normalize, how_many, args.set, 'pca', pca_dims=16))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc0_avg_features_fp_orig.pickle'), 'conv\navg fp\noriginal', args.normalize, how_many, args.set, 'pca', pca_dims=8))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc0_max_features_fp_orig.pickle'), 'conv\nmax fp\noriginal', args.normalize, how_many, args.set, 'pca', pca_dims=8))
+
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize, how_many, args.set, 'pca', pca_dims=8))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize, how_many, args.set, 'pca', pca_dims=8))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_avg_features_fp.pickle'), 'g_fc1\navg fp', args.normalize, how_many, args.set, 'pca', pca_dims=8))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc1_max_features_fp.pickle'), 'g_fc1\nmax fp', args.normalize, how_many, args.set, 'pca', pca_dims=8))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc0_avg_features_fp_orig.pickle'), 'conv\navg fp\noriginal', args.normalize, how_many, args.set, 'pca', pca_dims=4))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'train_gfc0_max_features_fp_orig.pickle'), 'conv\nmax fp\noriginal', args.normalize, how_many, args.set, 'pca', pca_dims=4))
 
     # RMAC #
     feats_orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
@@ -156,6 +178,16 @@ if __name__ == '__main__':
     # RMAC WITH PCA #
     feats_orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
         os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize, how_many, args.set, 'pca'))
+
+    feats_orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
+        os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize, how_many, args.set, 'pca', pca_dims=512))
+
+    feats_orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
+        os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize, how_many, args.set, 'pca', pca_dims=256))
+
+    # Make sure that there are not duplicate identifiers, otherwise strange things happen
+    all_ids = [x.get_identifier() for x in feats_orders]
+    assert len(set(all_ids))==len(all_ids), "Duplicate identifiers!"
     
     #initialize ground truth
     print('Initializing ground truth...')
@@ -203,6 +235,6 @@ if __name__ == '__main__':
     else:
         normalized_str = 'no-normalized'
     gt = '{}-{}'.format(args.ground_truth, args.graph_ground_truth) if 'graph' in args.ground_truth else args.ground_truth 
-    filename = os.path.join(stats_dir,'stats_{}_{}-gt.pickle'.format(normalized_str, gt))
+    filename = os.path.join(stats_dir,'stats_{}_{}-gt_{}.pickle'.format(normalized_str, gt,args.set))
     outf = open(filename, 'wb')
     pickle.dump(stats_out, outf)

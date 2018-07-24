@@ -20,13 +20,15 @@ parser.add_argument('--confidence', type=float, default=0.95,
                     help='confidence interval')
 parser.add_argument('--scale', type=float, default=2.0,
                     help='graphs scale factor')
+parser.add_argument('--set', type=str, default='test', choices=['test','train'],
+                    help='which set should be used')
 args = parser.parse_args()
 
 stats_dir = './stats'
 merged_stats = {}
 filenames = {}
-filenames['normalized'] = os.path.join(stats_dir, 'stats_normalized_{}-gt.pickle'.format(args.ground_truth))
-filenames['no-normalized'] = os.path.join(stats_dir, 'stats_no-normalized_{}-gt.pickle'.format(args.ground_truth))
+filenames['normalized'] = os.path.join(stats_dir, 'stats_normalized_{}-gt_{}.pickle'.format(args.ground_truth, args.set))
+filenames['no-normalized'] = os.path.join(stats_dir, 'stats_no-normalized_{}-gt_{}.pickle'.format(args.ground_truth, args.set))
 for stat_type, filename in filenames.items():
     if os.path.isfile(filename):
         f = open(filename,'rb')

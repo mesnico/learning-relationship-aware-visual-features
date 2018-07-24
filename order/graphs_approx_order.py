@@ -158,6 +158,10 @@ class GraphsApproxOrder(OrderBase):
 
     def get_name(self):
         return 'graph GT\n({})\napprox'.format(self.gt)
+
+    def get_identifier(self):
+        return '{}-set{}'.format(self.get_name().replace('\n','_').replace(' ','-'), self.st)
+
     def length(self):
         return len(self.graphs)
 

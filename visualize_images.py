@@ -12,12 +12,14 @@ from tqdm import tqdm, trange
 import math
 
 class ClevrImageLoader():
-    def __init__(self, images_dir):
+    def __init__(self, images_dir, st):
         self.images_dir = images_dir
+        self.st = st
 
     def get(self,index):
         padded_index = str(index).rjust(6,'0')
-        img_filename = os.path.join(self.images_dir, 'val', 'CLEVR_val_{}.png'.format(padded_index))
+        s = 'val' if self.st=='test' else self.st
+        img_filename = os.path.join(self.images_dir, s, 'CLEVR_{}_{}.png'.format(s, padded_index))
         image = cv2.imread(img_filename)
         return image / 255.
 
@@ -35,7 +37,7 @@ def build_figure(orders, image_loader, query_idx, n=10, scale=1):
     separator = np.zeros(shape=(320,5,3))
 
     for o_idx,o in enumerate(orders):
-        _,ordered_dist,permut = o.get(query_idx, False)
+        _,ordered_dist,permut = o.get(query_idx, False, min_length=15000, keep_orig_consistency=True)
         n_permut = permut[:n]
         row = []
         for idx,p in enumerate(n_permut):
@@ -70,6 +72,8 @@ if __name__ == '__main__':
                         help='number of images for every row')
     parser.add_argument('--scale', type=float, default=0.5,
                         help='final image scale factor')
+    parser.add_argument('--set', type=str, default='test', choices=['test','train'],
+                        help='which set should be used')
     args = parser.parse_args()
 
     feats_dir = './features'  
@@ -77,23 +81,24 @@ if __name__ == '__main__':
     #initialize orders objects
     print('Initializing all orderings...')
     orders = []
+    how_many = 15000
     scene_json_filename = os.path.join(args.clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
-    orders.append(graphs_approx_order.GraphsApproxOrder(scene_json_filename, 'proportional', 2))
-    orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize))
+    orders.append(graphs_approx_order.GraphsApproxOrder(args.clevr_dir, 'proportional', how_many, args.set))
+    orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize, how_many))
     orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
-        os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize))
+        os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize, how_many, args.set))
     
     #orders.append(graphs_order.GraphsOrder(scene_json_filename, 'proportional', 2))
-    orders.append(graphs_approx_order.GraphsApproxOrder(scene_json_filename, 'proportional', 2))
+    #orders.append(graphs_approx_order.GraphsApproxOrder(scene_json_filename, 'proportional', 2))
 
-    orders.append(states_order.StatesOrder(scene_json_filename, mode='fuzzy', ncpu=2))
+    #orders.append(states_order.StatesOrder(scene_json_filename, mode='fuzzy', ncpu=2))
 
     #orders.append(rn_order.RNOrder(os.path.join(feats_dir,'avg_features_sd.pickle'), 'g_fc2_avg state description', args.normalize))
     
 
     #build images
     img_dir = os.path.join(args.clevr_dir,'images')
-    img_loader = ClevrImageLoader(img_dir)
+    img_loader = ClevrImageLoader(img_dir, args.set)
     with PdfPages('images_out.pdf') as pdf:
         progress = trange(args.from_idx, args.to_idx+1)
         for idx in progress:

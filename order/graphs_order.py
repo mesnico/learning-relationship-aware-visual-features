@@ -91,6 +91,10 @@ class GraphsOrder(OrderBase):
 
     def get_name(self):
         return 'graph GT\n({})'.format(self.gt)
+
+    def get_identifier(self):
+        return format(self.get_name().replace('\n','_').replace(' ','-'))
+
     def length(self):
         return len(self.graphs)
 

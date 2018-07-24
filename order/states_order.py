@@ -201,6 +201,9 @@ class StatesOrder(OrderBase):
     def get_name(self):
         return 'states GT'
 
+    def get_identifier(self):
+        return format(self.get_name().replace('\n','_').replace(' ','-'))
+
     def length(self):
         return len(self.states)
 

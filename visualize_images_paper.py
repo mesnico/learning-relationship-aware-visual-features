@@ -37,10 +37,10 @@ def build_figure(orders, image_loader, query_idx, n=10, scale=1):
     query_axs.set_yticklabels([])
     separator = np.zeros(shape=(320,5,3))
 
-    tmp_dic = {'graph GT\n(proportional)\napprox':'Approx\nGED', 'g_fc2\navg fp':'2S-RN', 'RMAC':'RMAC'}
+    tmp_dic = {'graph GT\n(proportional)\napprox':'Approx\nGED', 'conv\norig\navg fp':'RN', 'RMAC':'RMAC'}
 
     for o_idx,o in enumerate(orders):
-        _,ordered_dist,permut = o.get(query_idx, False)
+        _,ordered_dist,permut = o.get(query_idx, False, min_length=15000, keep_orig_consistency=True)
         n_permut = permut[:n]
         row = []
         #n_permut_v = [v + 1 for v in n_permut]
@@ -86,9 +86,10 @@ if __name__ == '__main__':
     #initialize orders objects
     print('Initializing all orderings...')
     orders = []
-    scene_json_filename = os.path.join(args.clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
-    orders.append(graphs_approx_order.GraphsApproxOrder(scene_json_filename, 'proportional', 2))
-    orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize))
+    #scene_json_filename = os.path.join(args.clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
+    orders.append(graphs_approx_order.GraphsApproxOrder(args.clevr_dir, 'proportional'))
+    #orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize))
+    orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_avg_features_orig_noprenorm.pickle'), 'conv\norig\navg fp', args.normalize))
     orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
         os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize))
     
