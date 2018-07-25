@@ -107,6 +107,7 @@ def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True
     ax.set_ylabel('{} index'.format(name))
     #ax.set_xlim(0, len(ind))
     ax.set_title('{}, {}% conf. interval'.format(name,confidence*100))
+    ax.grid(color='r', linestyle='dotted', linewidth=1)
 
 def build_recall_graph(merged_stats, confidence = 0.95, scale=1.0):
     view = {}

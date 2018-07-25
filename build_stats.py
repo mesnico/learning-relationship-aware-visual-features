@@ -126,12 +126,25 @@ if __name__ == '__main__':
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_avg_features_fp.pickle'), 'g_fc1\navg fp', args.normalize))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_max_features_fp.pickle'), 'g_fc1\nmax fp', args.normalize))
 
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'afteraggr_features_sd.pickle'), 'afteraggr\nsd', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'afteraggr-no-prenorm_features_sd.pickle'), 'afteraggr\nsd\nno-prenorm', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_avg_features_orig.pickle'), 'conv\navg fp\noriginal', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_max_features_orig.pickle'), 'conv\nmax fp\noriginal', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_avg_features_orig_noprenorm.pickle'), 'conv\navg fp\noriginal\nno prenorm', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_max_features_orig_noprenorm.pickle'), 'conv\nmax fp\noriginal\nno prenorm', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'afteraggr_features_sd.pickle'), 'afteraggr\nsd', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'afteraggr-no-prenorm_features_sd.pickle'), 'afteraggr\nsd\nno-prenorm', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_avg_features_orig.pickle'), 'conv\navg fp\noriginal', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_max_features_orig.pickle'), 'conv\nmax fp\noriginal', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_avg_features_orig_noprenorm.pickle'), 'conv\navg fp\noriginal\nno prenorm', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc0_max_features_orig_noprenorm.pickle'), 'conv\nmax fp\noriginal\nno prenorm', args.normalize))
+
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_avgconv_features.pickle'), 'conv\nglob avg\nfp', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_maxconv_features.pickle'), 'conv\nglob max\nfp', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_avgconv_features_prenorm.pickle'), 'conv\nglob avg\nprenorm fp', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_maxconv_features_prenorm.pickle'), 'conv\nglob max\nprenorm fp', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_flatconv_features.pickle'), 'conv\nflatten\nfp', args.normalize))
+
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'cnn_global-avg-pool_features.pickle'), 'conv\nglob avg\nonly cnn\nfp', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'cnn_global-max-pool_features.pickle'), 'conv\nglob max\nonly cnn\nfp', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'cnn_flat_features.pickle'), 'conv\nflatten\nonly cnn\nfp', args.normalize))
+
+        
+
 
     elif args.set == 'train':
         ### FROM TRAIN ###
@@ -176,14 +189,14 @@ if __name__ == '__main__':
         os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize, how_many, args.set))
 
     # RMAC WITH PCA #
-    feats_orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
+    '''feats_orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
         os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize, how_many, args.set, 'pca'))
 
     feats_orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
         os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize, how_many, args.set, 'pca', pca_dims=512))
 
     feats_orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
-        os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize, how_many, args.set, 'pca', pca_dims=256))
+        os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize, how_many, args.set, 'pca', pca_dims=256))'''
 
     # Make sure that there are not duplicate identifiers, otherwise strange things happen
     all_ids = [x.get_identifier() for x in feats_orders]
