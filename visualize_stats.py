@@ -110,8 +110,12 @@ def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True
     ax.set_title('{}, {}% conf. interval'.format(name,confidence*100))
     ax.grid(color='r', linestyle='dotted', linewidth=1)
 
+output_dir = 'output'
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
 #display the graph for every statistic different from the recall-at-k
-with PdfPages('stats_out_{}-gt.pdf'.format(args.ground_truth)) as pdf:
+with PdfPages(os.path.join(output_dir,'stats_out_{}-gt.pdf'.format(args.ground_truth))) as pdf:
     stats = list(list(merged_stats.values())[0].keys())
     bar_stats = [s for s in stats]
     for s in bar_stats:

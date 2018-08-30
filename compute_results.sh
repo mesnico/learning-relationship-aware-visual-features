@@ -32,24 +32,17 @@ if [ -z "$CLEVRDIR" ]; then
 	exit
 fi
 
-echo "Building virtual environment for elaborating features"
+if [ ! -d "$CLEVRDIR" ]; then
+	echo "Specified CLEVR directory does not exist!"
+	exit
+fi
+
 if [ ! -f .venvok ]; then
-	mkdir retrieval_env
-	virtualenv -p /usr/bin/python3 retrieval_env
+	echo "Virtual environment not installed. Have you run setup.sh?"
+	exit
 fi
 
 source ./retrieval_env/bin/activate
-
-if [ ! -f .venvok ]; then
-	echo "Installing dependencies..."
-	which pip3
-	pip3 install -r requirements.txt
-	pip3 install -e networkx
-else
-	echo "Features virtual environment already installed"
-fi
-
-touch .venvok
 
 if [ ! -f .statsok ]; then
 
@@ -75,5 +68,4 @@ python3 visualize_stats.py --ground-truth graph-approx-proportional --aggregate
 printf "\nHard-match results\n"
 python3 visualize_stats.py --ground-truth graph-approx-atleastone --aggregate
 
-printf "\nDeactivating virtual environment...\n"
 deactivate
