@@ -12,7 +12,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from collections import OrderedDict
 
 parser = argparse.ArgumentParser(description='Stats visualizer')
-parser.add_argument('--ground-truth', type=str, default='proportional',
+parser.add_argument('--ground-truth', type=str, default='graph-approx-proportional',
                     help='how many images in the result')
 parser.add_argument('--aggregate', action='store_true', default=False,
                     help='enable max aggregation on multiple stats files')
@@ -75,9 +75,9 @@ def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True
             conf = st.t.ppf((1+confidence)/2, len(values)-1) * sem
             neg_conf = conf if mean>conf or can_be_negative else mean
             y_errors.append([neg_conf,conf])
-            if name == 'spearmanr' and ('fp original no prenorm' in feat.replace('\n',' ') or 'g_fc2' in feat or 'RMAC' in feat):
-                f = feat.replace('\n',' ')
-                print('{} {} -  = {} +- {}'.format(f, typekey, mean, conf))
+            
+            #f = feat.replace('\n',' ')
+            #print('{} {} -  = {} +- {}'.format(f, typekey, mean, conf))
         all_means.append(mean_values)
         all_y_errors.append(y_errors)
         num_bars = len(feats)
@@ -99,8 +99,9 @@ def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True
         plt.bar(ind, max_mean, width, color=shading, yerr=yerr, error_kw=error_formatting)
         
         for ind, k in enumerate(feats_sorted_keys):
-            #pdb.set_trace()
-            print('{}--{}: {:.2}; -{:.2}/+{:.2}'.format(name,k,max_mean[ind], yerr[0,ind], yerr[1,ind]))
+            #pdb.set_trace
+            f = k.replace('\n',' ')
+            print('{}--{}: {:.2}; -{:.2}/+{:.2}'.format(name,f,max_mean[ind], yerr[0,ind], yerr[1,ind]))
 
     else:
         ax.legend(bars, list(merged_stats.keys()) )
@@ -109,67 +110,14 @@ def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True
     ax.set_title('{}, {}% conf. interval'.format(name,confidence*100))
     ax.grid(color='r', linestyle='dotted', linewidth=1)
 
-def build_recall_graph(merged_stats, confidence = 0.95, scale=1.0):
-    view = {}
-    for typekey, ftype in merged_stats.items():
-        #typekes at this moment can be only 'normalized' or 'no-normalized'
-        stat = ftype['recall-at-k']
-        #eliminate columns i'm not interested in
-        feats = {k:stat[0][k] for k in stat[0] if k not in 'image_id' and k not in 'n_items'}
-        
-        #reorganize the values so that i have all the samples for every feat
-        for sample in stat:
-            for feat,v in sample.items():
-                if feat not in feats:
-                    continue
-                s = []
-                #line_legend = '{} - {}'.format(feat, typekey)
-                if typekey not in view:
-                    view[typekey] = {}
-                if feat not in view[typekey]:
-                    view[typekey][feat] = []
-                for k,recall in OrderedDict(sorted(v.items())).items():
-                    s.append((k,recall))
-                view[typekey][feat].append(s)
-
-    #calculate mean and conf interval for every point
-    fig, ax = plt.subplots(len(view), figsize=(4*scale, 5*scale))
-    i = 0
-    for typekey, ftype in view.items():
-        if len(view) == 1:
-            this_ax = ax
-        else:
-            this_ax = ax[i]
-
-        lines = []
-        for feat,v in ftype.items():
-            a = np.asarray(v)
-            recalls = a[:,:,1]
-            k = a[0,:,0]
-            recalls_mean = np.mean(recalls,axis=0)
-            recalls_sem = st.sem(recalls,axis=0)
-            conf = st.t.ppf((1+confidence)/2, a.shape[0]-1) * recalls_sem
-            
-            lines.append(this_ax.errorbar(k, recalls_mean, yerr=conf, fmt='-', elinewidth=1, capsize=1))
-            this_ax.set_xscale("log", nonposx='clip')
-        this_ax.set_title('{}, {}% conf. interval'.format(typekey,confidence*100))
-        this_ax.set_xlabel('k')
-        this_ax.set_ylabel('recall-at-k index')
-        this_ax.legend(lines, list(ftype.keys()))
-        i=i+1
-
 #display the graph for every statistic different from the recall-at-k
 with PdfPages('stats_out_{}-gt.pdf'.format(args.ground_truth)) as pdf:
     stats = list(list(merged_stats.values())[0].keys())
-    bar_stats = [s for s in stats if s not in 'recall-at-k']
+    bar_stats = [s for s in stats]
     for s in bar_stats:
         negative = True if s == 'spearmanr' else False
         build_bar_graph(merged_stats, s, args.aggregate, negative, args.confidence, args.scale)
         pdf.savefig()
-
-    #display the graph for the recall-at-k
-    build_recall_graph(merged_stats, args.confidence, args.scale)
-    pdf.savefig()
     
 
 

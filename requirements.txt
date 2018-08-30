@@ -1,7 +1,6 @@
-numpy==1.14.2
+numpy
 tqdm==4.19.2
 h5py==2.7.1
 opencv_python==3.3.0.10
 matplotlib==2.2.2
 scipy==0.19.1
-progressbar2==3.37.1

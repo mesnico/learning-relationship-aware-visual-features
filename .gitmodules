@@ -1,3 +1,7 @@
 [submodule "networkx"]
 	path = networkx
 	url = https://github.com/mesnico/networkx
+[submodule "RelationNetworks-CLEVR"]
+	path = RelationNetworks-CLEVR
+	url = https://github.com/mesnico/RelationNetworks-CLEVR
+	ignore = dirty

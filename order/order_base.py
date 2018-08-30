@@ -19,25 +19,13 @@ class OrderBase(ABC):
     def get_name():
         return NotImplemented
 
-    def get(self, query_idx, include_query=False, min_length=0, keep_orig_consistency=False, cache_fld='DOP_cache'):
-        #permutation caching mechanism
-        fld_name = os.path.join(cache_fld, '{}-len{}'.format(self.get_identifier(),min_length))
-        if not os.path.exists(fld_name):
-            os.makedirs(fld_name)
-        curr_cache_filename = os.path.join(fld_name, 'dop-{}.pkl'.format(query_idx))
-        if cache_fld == None or not os.path.isfile(curr_cache_filename):
-            self.__distances = self.compute_distances(query_idx)
-            if min_length > 0:
-                self.__distances = self.__distances[:min_length]
-            self.__ordered_distances = np.sort(self.__distances)
-            self.__permuts = np.argsort(self.__distances, kind='mergesort')
-            with open(curr_cache_filename,'wb') as f:
-                pickle.dump((self.__distances, self.__ordered_distances, self.__permuts), f)
-        else:
-            #load cache file
-            with open(curr_cache_filename,'rb') as f:
-                print('Loading cached DOPs for {}'.format(curr_cache_filename))
-                self.__distances, self.__ordered_distances, self.__permuts = pickle.load(f)
+    def get(self, query_idx, include_query=False, min_length=0, keep_orig_consistency=False):
+       
+        self.__distances = self.compute_distances(query_idx)
+        if min_length > 0:
+            self.__distances = self.__distances[:min_length]
+        self.__ordered_distances = np.sort(self.__distances)
+        self.__permuts = np.argsort(self.__distances, kind='mergesort')
 
         if not include_query:
             #delete first item in permuts and ordered_distances
