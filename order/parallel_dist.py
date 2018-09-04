@@ -2,7 +2,6 @@ import multiprocessing
 import os
 import time
 import numpy as np
-from progressbar import ProgressBar, Percentage, Bar, AdaptiveETA
 import threading
 
 

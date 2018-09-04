@@ -1,6 +1,6 @@
 # Learning Relationship-aware Visual Features
 This repository contains the code for reproducing results from our paper: [link]
-
+![r-cbir](https://user-images.githubusercontent.com/25117311/45022838-7e171f80-b035-11e8-8b2c-2842582291c6.png)
 ## Get ready
 1.  Download and extract CLEVR_v1.0 dataset: http://cs.stanford.edu/people/jcjohns/clevr/
 
@@ -12,6 +12,7 @@ This repository contains the code for reproducing results from our paper: [link]
     
 3. Move into the cloned repository and run 
     ```
+    chmod u+x *.sh
     ./setup.sh path/to/CLEVR_v1.0
     ```
     substituting ```path/to/CLEVR_v1.0``` with the path to your CLEVR extracted folder. This script will download RMAC features for CLEVR dataset and precalculated GED distances (ground-truth). Then, it will extract features from 2S-RN using pretrained IR model.
@@ -19,14 +20,14 @@ This repository contains the code for reproducing results from our paper: [link]
     
 ## Results
 ### Spearman-Rho correlation
-This section is aimed at reproducing Spearman-Rho correlation values for RMAC, RN and 2S-RN features against the generated GT.
+In order to reproduce Spearman-Rho correlation values for RMAC, RN and 2S-RN features against the generated GT, run
 ```
 ./compute_results.sh -d path/to/CLEVR_v1.0
 ```
-This script will setup a virtual environment for computing all RMAC, RN and 2S-RN distances for both soft and hard matches.
-**NOTE**:The first time this script is run may take some time; once finished, results will be cached and final spearman-rho metrics will be immediately available at every successive run.
+This script will compute distances, rankings and correlation values for both soft and hard matches.
+**NOTE**:The first time this script is run may take some time; once finished, results are cached and final spearman-rho metrics will be immediately available at every successive run.
 
-This script prints spearman-rho correlation values in the current terminal and creates a graphical visualization storing it in pdf files in the ```output``` folder.
+This script prints Spearman-Rho correlation values in the current terminal and creates a graphical visualization storing it in pdf files in the ```output``` folder.
 
 In order to modify parameters such as *start* and *end* query indexes or number of processes used to compute GED distances, run 
 ```
@@ -38,8 +39,8 @@ It is possible to view the top relevant images using RMAC, RN and 2S-RN features
 ```
 ./compute_visual_results.sh -d path/to/CLEVR_v1.0
 ```
-This script will create a pdf file in the main folder called ```visual_results.pdf``` showing retrieval results for every query image.
-By default, only 10 query images are used. To change the range of query images to use you can specify parameters ```-s``` and ```-e```. For more informations, run
+This script will create a pdf file in the ```output``` folder called ```visual_results.pdf``` showing retrieval results for every query image.
+By default, only 10 query images are used. In order to change the range of query images to use you can specify parameters ```-s``` and ```-e```. For more informations, run
 ```
 ./compute_visual_results.sh -h
 ```

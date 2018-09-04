@@ -101,7 +101,7 @@ def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True
         for ind, k in enumerate(feats_sorted_keys):
             #pdb.set_trace
             f = k.replace('\n',' ')
-            print('{}--{}: {:.2}; -{:.2}/+{:.2}'.format(name,f,max_mean[ind], yerr[0,ind], yerr[1,ind]))
+            print('{}--{}: {:.2} +/-{:.2}'.format(name,f,max_mean[ind], yerr[0,ind]))
 
     else:
         ax.legend(bars, list(merged_stats.keys()) )
