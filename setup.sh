@@ -23,9 +23,15 @@ echo "CLEVR is at "$CLEVRDIR
 if [ ! -f .downloadok ]; then
 	#Download RMAC features
 	echo "Downloading RMAC features..."
+	wget http://datone.isti.cnr.it/r-cbir/rmac_features.tar.xz
 
 	#Download cached GED-approx distances
 	echo "Downloading GED-approx precalculated distances"
+	wget http://datone.isti.cnr.it/r-cbir/dist_cache.tar.xz
+
+	echo "Extracting..."
+	tar -xvf rmac_features.tar.xz
+	tar -xvf dist_cache.tar.xz
 
 	touch .downloadok
 else
