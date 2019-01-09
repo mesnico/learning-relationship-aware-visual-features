@@ -10,13 +10,14 @@ from .parallel_dist import parallel_distances
 class GraphsOrder(OrderBase):
     graphs = None
 
-    def __init__(self, scene_file, gt='proportional', ncpu=4):
+    def __init__(self, scene_file, gt='proportional', ncpu=4, dataset='test'):
         super().__init__()
         if not GraphsOrder.graphs:
             print('Building graphs from JSON...')
             GraphsOrder.graphs = self.load_graphs(scene_file)
         self.gt = gt
         self.ncpu = ncpu
+        self.dataset = dataset
 
     def load_graphs(self,scene_file):
         clevr_scenes = json.load(open(scene_file))['scenes']
@@ -87,7 +88,7 @@ class GraphsOrder(OrderBase):
              node_subst_cost = node_subst_cost)
 
     def compute_distances(self, query_img_index):
-        return parallel_distances('ged-{}'.format(self.gt), self.graphs, query_img_index, self.ged, kwargs={'node_weight_mode':self.gt}, ncpu=self.ncpu)
+        return parallel_distances('ged-{}-{}'.format(self.gt, self.dataset), self.graphs, query_img_index, self.ged, kwargs={'node_weight_mode':self.gt}, ncpu=self.ncpu)
 
     def get_name(self):
         return 'graph GT\n({})'.format(self.gt)

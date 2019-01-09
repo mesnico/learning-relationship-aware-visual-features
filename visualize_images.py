@@ -84,10 +84,12 @@ if __name__ == '__main__':
     how_many = 15000
     scene_json_filename = os.path.join(args.clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
     orders.append(graphs_approx_order.GraphsApproxOrder(args.clevr_dir, 'proportional', how_many, args.set))
-    orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize, how_many))
     orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
         os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize, how_many, args.set))
     
+    orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_avgconv_features_fp.pickle'), 'conv\navg fp', args.normalize))
+    orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize))
+    orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_512dim_bidir2_features_fp.pickle'), 'afteraggr\nbidir2 fp', args.normalize))
     #orders.append(graphs_order.GraphsOrder(scene_json_filename, 'proportional', 2))
     #orders.append(graphs_approx_order.GraphsApproxOrder(scene_json_filename, 'proportional', 2))
 
