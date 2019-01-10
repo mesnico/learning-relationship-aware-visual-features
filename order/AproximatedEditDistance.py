@@ -8,11 +8,13 @@
     Image and Vision computing 27.7 (2009): 950-959.
 """
 
-from GraphEditDistance import GraphEditDistance
+from .GraphEditDistance import GraphEditDistance
 
 from scipy.optimize import linear_sum_assignment
 import numpy as np
 import sys
+
+ged_inf = 1e3
 
 __author__ = "Pau Riba, Anjan Dutta"
 __email__ = "priba@cvc.uab.cat, adutta@cvc.uab.cat"
@@ -29,11 +31,11 @@ class AproximatedEditDistance(GraphEditDistance):
         cost_matrix = np.zeros([len(g1)+len(g2),len(g1)+len(g2)])
 
         # Insertion
-        cost_matrix[len(g1):, 0:len(g2)] = sys.float_info.max
+        cost_matrix[len(g1):, 0:len(g2)] = ged_inf
         np.fill_diagonal(cost_matrix[len(g1):, 0:len(g2)], self.edge_insertion(g1.values()))
 
         # Deletion
-        cost_matrix[0:len(g1), len(g2):] = sys.float_info.max
+        cost_matrix[0:len(g1), len(g2):] = ged_inf
         np.fill_diagonal(cost_matrix[0:len(g1), len(g2):], self.edge_deletion(g2.values()))
 
         # Substitution
@@ -60,11 +62,11 @@ class AproximatedEditDistance(GraphEditDistance):
         cost_matrix = np.zeros([len(g1)+len(g2),len(g1)+len(g2)])
 
         # Insertion
-        cost_matrix[len(g1):, 0:len(g2)] = sys.float_info.max
+        cost_matrix[len(g1):, 0:len(g2)] = ged_inf
         np.fill_diagonal(cost_matrix[len(g1):, 0:len(g2)], self.node_insertion(g1)+self.edge_insertion(g1.adjacency()))
 
         # Deletion
-        cost_matrix[0:len(g1), len(g2):] = sys.float_info.max
+        cost_matrix[0:len(g1), len(g2):] = ged_inf
         np.fill_diagonal(cost_matrix[0:len(g1), len(g2):], self.node_deletion(g2)+self.edge_deletion(g2.adjacency()))
 
         # Substitution

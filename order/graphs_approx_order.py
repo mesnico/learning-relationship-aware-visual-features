@@ -2,10 +2,10 @@ import pickle
 import numpy as np
 import pdb
 import networkx as nx
-from AproximatedEditDistance import AproximatedEditDistance
+from .AproximatedEditDistance import AproximatedEditDistance
 import json
-from order_base import OrderBase
-from parallel_dist import parallel_distances
+from .order_base import OrderBase
+from .parallel_dist import parallel_distances
 
 class ApproxGED(AproximatedEditDistance):
     """
