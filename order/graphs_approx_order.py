@@ -2,10 +2,10 @@ import pickle
 import numpy as np
 import pdb
 import networkx as nx
-from .AproximatedEditDistance import AproximatedEditDistance
+from AproximatedEditDistance import AproximatedEditDistance
 import json
-from .order_base import OrderBase
-from .parallel_dist import parallel_distances
+from order_base import OrderBase
+from parallel_dist import parallel_distances
 
 class ApproxGED(AproximatedEditDistance):
     """
@@ -67,7 +67,7 @@ class ApproxGED(AproximatedEditDistance):
         """
         values = [v for k, v in g.nodes(data=True)]
         return [1] * len(values)
-'''
+
     """
         Edge edit operations
     """
@@ -78,6 +78,15 @@ class ApproxGED(AproximatedEditDistance):
             :return: List of edge deletion costs
         """
         edge_dist = np.zeros((len(g1), len(g2)))
+        for i_idx,i in enumerate(g1):
+            for j_idx,j in enumerate(g2):   
+                rel_to_i = set([k['relation'] for k in g1[i].values()])
+                rel_to_j = set([k['relation'] for k in g2[j].values()])
+        
+                # calculate the amount of relations that differ from node i to node j
+                diff = len(rel_to_i.union(rel_to_j))-len(rel_to_i.intersection(rel_to_j))
+                edge_dist[i_idx,j_idx] = diff
+                                      
         return edge_dist
 
     def edge_insertion(self, g):
@@ -97,7 +106,7 @@ class ApproxGED(AproximatedEditDistance):
         """
         del_edges = [len(e) for e in g]
         return np.ones(len(del_edges))
-'''
+
 '''Ordering for distances extracted by graphs by means of approximated graph edit distance'''
 class GraphsApproxOrder(OrderBase):
     graphs = None
@@ -114,7 +123,7 @@ class GraphsApproxOrder(OrderBase):
         self.st = st
         self.ncpu = ncpu
 
-    def load_graphs(self,scene_file, how_many):
+    '''def load_graphs(self,scene_file, how_many):
         clevr_scenes = json.load(open(scene_file))['scenes']
         clevr_scenes = clevr_scenes[:how_many]
         graphs = []
@@ -137,7 +146,30 @@ class GraphsApproxOrder(OrderBase):
                             graph[name].add_edge(a_idx, b_idx)
 
             graphs.append(graph)
+        return graphs'''
+
+    def load_graphs(self,scene_file,how_many):
+        clevr_scenes = json.load(open(scene_file))['scenes']
+        clevr_scenes = clevr_scenes[:how_many]
+        graphs = []
+
+        for scene in clevr_scenes:
+            graph = nx.MultiDiGraph()
+            #build graph nodes for every object
+            objs = scene['objects']
+            for idx, obj in enumerate(objs):
+                graph.add_node(idx, color=obj['color'], shape=obj['shape'], material=obj['material'], size=obj['size'])
+            
+            relationships = scene['relationships']
+            for name, rel in relationships.items():
+                if name in ('right','front'):
+                    for b_idx, row in enumerate(rel):
+                        for a_idx in row:
+                            graph.add_edge(a_idx, b_idx, relation=name)
+
+            graphs.append(graph)
         return graphs
+
 
     '''
     Calculates approximated graph edit distance.
@@ -145,10 +177,11 @@ class GraphsApproxOrder(OrderBase):
     def ged(self,g1,g2,node_weight_mode='proportional'):
         tot_cost = 0
         approx_ged = ApproxGED(self.gt)
-        for rel in ['right','front']:
+        '''for rel in ['right','front']:
             c, _ = approx_ged.ged(g1[rel], g2[rel])
             tot_cost += c
-
+        '''
+        tot_cost, _ = approx_ged.ged(g1, g2)
         return tot_cost
 
     def compute_distances(self, query_img_index):
@@ -169,9 +202,9 @@ class GraphsApproxOrder(OrderBase):
 #simple test
 import os
 if __name__ == "__main__":
-    clevr_dir = '../../../../CLEVR_v1.0'
+    clevr_dir = '/mnt1/CLEVR_v1.0/'
     idx = 6
     
-    scene_json_filename = os.path.join(clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
-    s = GraphsApproxOrder(scene_json_filename)
-    print(s.get(idx))
+    #scene_json_filename = os.path.join(clevr_dir, 'scenes', 'CLEVR_val_scenes.json')
+    s = GraphsApproxOrder(clevr_dir, how_many=13000, st='train')
+    print(s.ged(GraphsApproxOrder.graphs[44],GraphsApproxOrder.graphs[7674]))

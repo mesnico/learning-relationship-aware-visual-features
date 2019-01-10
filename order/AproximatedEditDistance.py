@@ -8,10 +8,11 @@
     Image and Vision computing 27.7 (2009): 950-959.
 """
 
-from .GraphEditDistance import GraphEditDistance
+from GraphEditDistance import GraphEditDistance
 
 from scipy.optimize import linear_sum_assignment
 import numpy as np
+import sys
 
 __author__ = "Pau Riba, Anjan Dutta"
 __email__ = "priba@cvc.uab.cat, adutta@cvc.uab.cat"
@@ -28,11 +29,11 @@ class AproximatedEditDistance(GraphEditDistance):
         cost_matrix = np.zeros([len(g1)+len(g2),len(g1)+len(g2)])
 
         # Insertion
-        cost_matrix[len(g1):, 0:len(g2)] = np.inf
+        cost_matrix[len(g1):, 0:len(g2)] = sys.float_info.max
         np.fill_diagonal(cost_matrix[len(g1):, 0:len(g2)], self.edge_insertion(g1.values()))
 
         # Deletion
-        cost_matrix[0:len(g1), len(g2):] = np.inf
+        cost_matrix[0:len(g1), len(g2):] = sys.float_info.max
         np.fill_diagonal(cost_matrix[0:len(g1), len(g2):], self.edge_deletion(g2.values()))
 
         # Substitution
@@ -44,7 +45,6 @@ class AproximatedEditDistance(GraphEditDistance):
         Aproximated graph edit distance for edges. The local structures are matched with this algorithm.
     """
     def edge_ed(self, g1, g2):
-
         # Compute cost matrix
         cost_matrix = self.edge_cost_matrix(g1, g2)
 
@@ -60,23 +60,23 @@ class AproximatedEditDistance(GraphEditDistance):
         cost_matrix = np.zeros([len(g1)+len(g2),len(g1)+len(g2)])
 
         # Insertion
-        cost_matrix[len(g1):, 0:len(g2)] = 5 #TODO: find a meaningful infinite value
-        np.fill_diagonal(cost_matrix[len(g1):, 0:len(g2)], self.node_insertion(g1))#+self.edge_insertion(g1.edge.values()))
+        cost_matrix[len(g1):, 0:len(g2)] = sys.float_info.max
+        np.fill_diagonal(cost_matrix[len(g1):, 0:len(g2)], self.node_insertion(g1)+self.edge_insertion(g1.adjacency()))
 
         # Deletion
-        cost_matrix[0:len(g1), len(g2):] = 5 #TODO: find a meaningful infinite value
-        np.fill_diagonal(cost_matrix[0:len(g1), len(g2):], self.node_deletion(g2))#+self.edge_deletion(g2.edge.values()))
+        cost_matrix[0:len(g1), len(g2):] = sys.float_info.max
+        np.fill_diagonal(cost_matrix[0:len(g1), len(g2):], self.node_deletion(g2)+self.edge_deletion(g2.adjacency()))
 
         # Substitution
         node_dist = self.node_substitution(g1, g2)
 
-        '''i1 = 0
+        i1 = 0
         for k1 in g1.nodes():
             i2 = 0
             for k2 in g2.nodes():
                 node_dist[i1, i2] += self.edge_ed(g1[k1], g2[k2])
                 i2 += 1
-            i1 += 1'''
+            i1 += 1
 
         cost_matrix[0:len(g1), 0:len(g2)] = node_dist
         return cost_matrix
@@ -94,11 +94,14 @@ class AproximatedEditDistance(GraphEditDistance):
 
         inv_cost = 0
         #add penalty for inverted edges
-        for (n1,n2) in g1.edges:
+        '''pdb.set_trace()
+        for n1,n2,_ in g1.edges:
             i1, i2 = list(row_ind).index(n1), list(row_ind).index(n2)
             g2_corresp_inv_edge = (col_ind[i2],col_ind[i1])
-            if g2_corresp_inv_edge in g2.edges:
+            pdb.set_trace()
+            if g2_corresp_inv_edge in g2.edges and g1[(n1,n2)] == g2[(n2,n1)]:
                 inv_cost += 1 #TODO: make this inversion cost a variable
+        '''
 
         # Graph edit distance
         dist = cost_matrix[row_ind, col_ind].sum()
