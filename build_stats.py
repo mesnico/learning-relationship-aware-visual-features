@@ -44,10 +44,13 @@ def compute_ranks(feat_orders, gt_order, query_img_index, include_query=False):
         #calculate stats for every feature
         k_logscale = {k:recall_at(permut, perm_gt, k) for k in k_logscale_axis}
         
+        norm_gt_similarities = 1 - (dist_gt / max(dist_gt))
+        norm_similarities = 1 - (dist / max(dist))
+        
         stat_indexes.append({'label': name,
                     'kendall-tau': kendalltau(dist, dist_gt)[0],
                     'spearmanr': spearmanr(dist, dist_gt)[0],
-                    'nDCG': metrics.ndcg_from_ranking(max(dist_gt) - dist_gt, permut[:500]),
+                    'nDCG': metrics.ndcg_score(norm_gt_similarities, norm_similarities, 5),
                     'recall-at-10': recall_at(permut, perm_gt, 10),
                     'recall-at-100': recall_at(permut, perm_gt, 100),
                     'recall-at-1000': recall_at(permut, perm_gt, 1000),
@@ -129,23 +132,36 @@ if __name__ == '__main__':
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'afteraggr-no-prenorm_features_sd.pickle'), 'afteraggr\nno-prenorm\nsd', args.normalize))'''
 
         ### FROM TEST SET - FP ###
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_maxconv_features_fp.pickle'), 'conv\nmax fp', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_maxconv_features_fp.pickle'), 'conv\nmax fp', args.normalize))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_avgconv_features_fp.pickle'), 'conv\navg fp', args.normalize))
 
         '''feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_gfc1_avg_features_sd.pickle'), 'g_fc1\navg sd', args.normalize))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_gfc1_max_features_sd.pickle'), 'g_fc1\nmax fp', args.normalize))'''
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize))
         
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj4_aggr4_1024dim_bidir1_features_fp.pickle'), 'afteraggr\nbidir1 fp', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj4_aggr4_1024dim_bidir1_features_fp.pickle'), 'afteraggr\nbidir1 fp', args.normalize))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_512dim_bidir2_features_fp.pickle'), 'afteraggr\nbidir2 fp', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_256dim_bidir3_features_fp.pickle'), 'afteraggr\nbidir3 fp', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_1024dim_bidir4_features_fp.pickle'), 'afteraggr\nbidir4 fp', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_1024dim_bidir7_features_fp.pickle'), 'afteraggr\nbidir7 fp', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc3_innetaggreg_qinj4_aggr3_512dim_bidir8_features_fp.pickle'), 'afteraggr\nbidir8 fp', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_512dim_bidir9_features_fp.pickle'), 'afteraggr\nbidir9 fp', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_2048dim_bidir10_features_fp.pickle'), 'afteraggr\nbidir10 fp', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_4096dim_bidir11_features_fp.pickle'), 'afteraggr\nbidir11 fp', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_256dim_bidir3_features_fp.pickle'), 'afteraggr\nbidir3 fp', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_1024dim_bidir4_features_fp.pickle'), 'afteraggr\nbidir4 fp', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_1024dim_bidir7_features_fp.pickle'), 'afteraggr\nbidir7 fp', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc3_innetaggreg_qinj4_aggr3_512dim_bidir8_features_fp.pickle'), 'afteraggr\nbidir8 fp', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_512dim_bidir9_features_fp.pickle'), 'afteraggr\nbidir9 fp', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_2048dim_bidir10_features_fp.pickle'), 'afteraggr\nbidir10 fp', args.normalize))
+        #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_4096dim_bidir11_features_fp.pickle'), 'afteraggr\nbidir11 fp', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_512dim_bidir2_transferlearn_weightedsum_features_fp.pickle'), 'afteraggr\nbidir2\nTL-WS\nfp', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_512dim_bidir2_transferlearn_weightedsum_epoch795_features_fp.pickle'), 'afteraggr\nbidir2\nTL-WS\nep795 fp', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_bs32_features_test.pickle'), 'G2V', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_node_dropout_bs64_features_test.pickle'), 'G2V\nnode\ndropout', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_node_dropout_bs64_contrastive_features_test.pickle'), 'G2V\nnode\ndropout\ncontrastive', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_bs64_features_test.pickle'), 'G2V\nbs64\nself-loops', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_contrastive_selfatt_mpnn1.pickle'), 'G2V\nself-att\nMPNN', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_contrastive_mpnn1_selfatt_belilovskyloss.pickle'), 'G2V\nself-att\nMPNN\nbelilovsky', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_contrastive_mpnn1_selfatt_mean.pickle'), 'G2V\nself-att\nMPNN\nmean', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_contrastive_mpnn1_selfatt_norm.pickle'), 'G2V\nself-att\nMPNN\nnorm', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_contrastive_mpnn_GRUCell_no-selfatt.pickle'), 'G2V\nMPNN\nGRUCell\nnorm', args.normalize))        
+
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'random_baseline.pickle'), 'RAND', args.normalize))
 
         #WITH PCA
         '''feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_avg_features_sd.pickle'), 'g_fc1\navg sd', args.normalize, how_many, args.set, 'pca', pca_dims=16))
