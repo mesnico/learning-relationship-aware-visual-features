@@ -21,7 +21,7 @@ class OrderBase(ABC):
 
     def get(self, query_idx, include_query=False, min_length=0, keep_orig_consistency=False, cache_fld='DOP_cache'):
         #permutation caching mechanism
-        fld_name = os.path.join(cache_fld, '{}-len{}'.format(self.get_identifier(),min_length))
+        fld_name = os.path.join(cache_fld, '{}'.format(self.get_identifier()))
         if not os.path.exists(fld_name):
             os.makedirs(fld_name)
         curr_cache_filename = os.path.join(fld_name, 'dop-{}.pkl'.format(query_idx))

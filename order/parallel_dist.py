@@ -28,7 +28,7 @@ def parallel_worker_init(distances, elems):
     parallel_worker.distances = distances
     parallel_worker.elems = elems
 
-def parallel_distances(cache_name, elems, query_img_index, worker_fn, ncpu=4, kwargs={}):
+def parallel_distances(cache_name, elems, query_img_index, worker_fn, ncpu=4, st='test', kwargs={}):
     lock = threading.Lock()
     end_works = 0
     def increment_finished(x):
@@ -51,16 +51,18 @@ def parallel_distances(cache_name, elems, query_img_index, worker_fn, ncpu=4, kw
     print('Computing {} distances for image {}, cache {}...'.format(n,query_img_index,cache_name))
     
     pbar = ProgressBar(widgets=[Percentage(), Bar(), AdaptiveETA()], maxval=n).start()
-    with multiprocessing.Pool(processes=ncpu, initializer=parallel_worker_init, initargs=(distances,elems)) as pool:
-        for idx in range(n):
-            pool.apply_async(parallel_worker, args=(query_img_index, idx, worker_fn, kwargs), callback=increment_finished)
+    pool = multiprocessing.Pool(processes=ncpu, initializer=parallel_worker_init, initargs=(distances,elems))
+    for idx in range(n):
+        pool.apply_async(parallel_worker, args=(query_img_index, idx, worker_fn, kwargs), callback=increment_finished)
         
-        while end_works != n:
-            pbar.update(end_works)
-            time.sleep(1)
+    while end_works != n:
+        pbar.update(end_works)
+        time.sleep(1)
 
-        pool.close()
-        pool.join()
+    pool.close()
+    pool.join()
 
     distances.flush()
-    return distances
+    distances_copy = np.copy(distances)
+    del distances
+    return distances_copy

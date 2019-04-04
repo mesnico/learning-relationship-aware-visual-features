@@ -157,6 +157,8 @@ class GraphsApproxOrder(OrderBase):
             graph = nx.MultiDiGraph()
             #build graph nodes for every object
             objs = scene['objects']
+            if len(objs) > 5:
+                continue
             for idx, obj in enumerate(objs):
                 graph.add_node(idx, color=obj['color'], shape=obj['shape'], material=obj['material'], size=obj['size'])
             
