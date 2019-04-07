@@ -5,14 +5,14 @@ from .order_base import OrderBase
 import faiss
 
 class RMACOrder(OrderBase):
-    def __init__(self, rmac_file, rmac_order_filename, normalize=False, how_many=15000, st='test', preproc=None, **kwargs):
+    def __init__(self, rmac_file, rmac_order_filename, normalize=False, how_many=15000, st='test', indexes=None, preproc=None, **kwargs):
         super().__init__()
 
         self.st = st
         self.normalize = normalize
         self.preproc = preproc
         print('Loading RMAC features...')
-        self.rmac_feats = self.load_rmac_features(rmac_file, rmac_order_filename, how_many)
+        self.rmac_feats = self.load_rmac_features(rmac_file, rmac_order_filename, how_many, indexes)
         print('Loaded {} RMAC features ({} dims)'.format(self.rmac_feats.shape[0], self.rmac_feats.shape[1]))
         if normalize:
             self.rmac_feats = utils.normalized(self.rmac_feats, 1)
@@ -28,7 +28,7 @@ class RMACOrder(OrderBase):
             print('PCA from {} to {}'.format(orig_dims, pca_dims))
         #TODO: preproc LSH
 
-    def load_rmac_features(self, feat_filename, feat_order_filename,how_many):
+    def load_rmac_features(self, feat_filename, feat_order_filename,how_many, indexes):
         features = h5py.File(feat_filename, 'r')['/rmac']
         img_names = open(feat_order_filename, 'r').readlines()
         
@@ -39,6 +39,8 @@ class RMACOrder(OrderBase):
         filtered = [feat for feat, name in zip(features, img_names) if s in name]
         filtered = np.vstack(filtered)
         filtered = filtered[:how_many]
+        if indexes is not None:
+            filtered = filtered[indexes]
         return filtered
 
     def compute_distances(self, query_img_index):

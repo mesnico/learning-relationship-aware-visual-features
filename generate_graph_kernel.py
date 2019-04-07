@@ -32,7 +32,7 @@ class GraphsApproxOrder(OrderBase):
         graphs = []
         img_indexes = []
 
-        for idx, scene in enumerate(clevr_scenes):
+        for s_idx, scene in enumerate(clevr_scenes):
             graph = nx.MultiDiGraph()
             # build graph nodes for every object
             objs = scene['objects']
@@ -47,7 +47,7 @@ class GraphsApproxOrder(OrderBase):
                     for b_idx, row in enumerate(rel):
                         for a_idx in row:
                             graph.add_edge(a_idx, b_idx, relation=name)
-            img_indexes.append(idx)
+            img_indexes.append(s_idx)
             graphs.append(graph)
         return graphs, img_indexes
 

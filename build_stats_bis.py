@@ -12,6 +12,8 @@ import argparse
 import metrics
 #import networkx.algorithms.similarity
 
+MAX_OBJS = 5
+
 def recall_at(gt_list, c_list, k=10):
     if len(gt_list) != len(c_list):
         raise ValueError('Dimension mismatch: the two lists should have same length')
@@ -34,8 +36,8 @@ def compute_ranks(feat_orders, gt_order, query_img_index, include_query=False):
     k_logscale_axis = np.unique(k_logscale_axis)
     k_logscale_axis = k_logscale_axis.astype(int)
 
-    feat_distances = utils.build_feat_dict(feat_orders, query_img_index, min_length=min_feats_len, include_query=include_query)
-    gt_distance = utils.build_feat_dict([gt_order], query_img_index, min_length=min_feats_len, include_query=include_query)
+    feat_distances = utils.build_feat_dict(feat_orders, query_img_index, min_length=min_feats_len, include_query=include_query, cache_fld='DOP_cache_bis')
+    gt_distance = utils.build_feat_dict([gt_order], query_img_index, min_length=min_feats_len, include_query=include_query, cache_fld='DOP_cache_bis')
 
     assert len(gt_distance) == 1, 'More than one Ground-Truth!'
     dist_gt, _, perm_gt = list(gt_distance.values())[0]
@@ -50,7 +52,7 @@ def compute_ranks(feat_orders, gt_order, query_img_index, include_query=False):
         stat_indexes.append({'label': name,
                     'kendall-tau': kendalltau(dist, dist_gt)[0],
                     'spearmanr': spearmanr(dist, dist_gt)[0],
-                    'nDCG': metrics.ndcg_score(norm_gt_similarities, norm_similarities, 5),
+                    'nDCG': metrics.ndcg_score(norm_gt_similarities, norm_similarities, 20),
                     'recall-at-10': recall_at(permut, perm_gt, 10),
                     'recall-at-100': recall_at(permut, perm_gt, 100),
                     'recall-at-1000': recall_at(permut, perm_gt, 1000),
@@ -96,7 +98,8 @@ if __name__ == '__main__':
                         help='Verbose output')
     args = parser.parse_args()
 
-    feats_dir = './features'    
+    feats_dir = './features'
+    feats_dir_already_filtered_objs = './features_clevr_lessequalthan5objs'
 
     #prepare cache folder
     cache_dir='./dist_cache'
@@ -120,6 +123,17 @@ if __name__ == '__main__':
     how_many=15000
 
     if args.set == 'test':
+        # calculate indexes of images having less than 5 objects
+        import json
+        cut = 2500
+
+        scene_json_filename = os.path.join(args.clevr_dir, 'scenes', 'CLEVR_{}_scenes.json'.format('val'))
+        with open(scene_json_filename) as f:
+            j = json.load(f)
+        scenes = j['scenes'][:cut]
+        scenes_idxs = [idx for idx, scene in enumerate(scenes) if len(scene['objects']) <= MAX_OBJS]
+        print('Number of chosen images: {}'.format(len(scenes_idxs)))
+
         #TODO: check arguments to all functions in test
         ### FROM TEST SET - SD ###
         '''feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'max_features_conv_sd.pickle'), 'conv\nmax sd', args.normalize))
@@ -133,15 +147,15 @@ if __name__ == '__main__':
 
         ### FROM TEST SET - FP ###
         #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_maxconv_features_fp.pickle'), 'conv\nmax fp', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_avgconv_features_fp.pickle'), 'conv\navg fp', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_avgconv_features_fp.pickle'), 'conv\navg fp', args.normalize, indexes=scenes_idxs))
 
         '''feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_gfc1_avg_features_sd.pickle'), 'g_fc1\navg sd', args.normalize))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_gfc1_max_features_sd.pickle'), 'g_fc1\nmax fp', args.normalize))'''
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize, indexes=scenes_idxs))
         #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_max_features_fp.pickle'), 'g_fc2\nmax fp', args.normalize))
         
         #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj4_aggr4_1024dim_bidir1_features_fp.pickle'), 'afteraggr\nbidir1 fp', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_512dim_bidir2_features_fp.pickle'), 'afteraggr\nbidir2 fp', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_512dim_bidir2_features_fp.pickle'), 'afteraggr\nbidir2 fp', args.normalize, indexes=scenes_idxs))
         #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_256dim_bidir3_features_fp.pickle'), 'afteraggr\nbidir3 fp', args.normalize))
         #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_1024dim_bidir4_features_fp.pickle'), 'afteraggr\nbidir4 fp', args.normalize))
         #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_1024dim_bidir7_features_fp.pickle'), 'afteraggr\nbidir7 fp', args.normalize))
@@ -149,9 +163,9 @@ if __name__ == '__main__':
         #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_512dim_bidir9_features_fp.pickle'), 'afteraggr\nbidir9 fp', args.normalize))
         #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_2048dim_bidir10_features_fp.pickle'), 'afteraggr\nbidir10 fp', args.normalize))
         #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_4096dim_bidir11_features_fp.pickle'), 'afteraggr\nbidir11 fp', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_512dim_bidir2_transferlearn_weightedsum_features_fp.pickle'), 'afteraggr\nbidir2\nTL-WS\nfp', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_512dim_bidir2_transferlearn_weightedsum_epoch795_features_fp.pickle'), 'afteraggr\nbidir2\nTL-WS\nep795 fp', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_bs32_features_test.pickle'), 'G2V', args.normalize))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_512dim_bidir2_transferlearn_weightedsum_features_fp.pickle'), 'afteraggr\nbidir2\nTL-WS\nfp', args.normalize, indexes=scenes_idxs))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc4_innetaggreg_qinj5_aggr4_512dim_bidir2_transferlearn_weightedsum_epoch795_features_fp.pickle'), 'afteraggr\nbidir2\nTL-WS\nep795 fp', args.normalize, indexes=scenes_idxs))
+        '''feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_bs32_features_test.pickle'), 'G2V', args.normalize))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_node_dropout_bs64_features_test.pickle'), 'G2V\nnode\ndropout', args.normalize))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_node_dropout_bs64_contrastive_features_test.pickle'), 'G2V\nnode\ndropout\ncontrastive', args.normalize))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_bs64_features_test.pickle'), 'G2V\nbs64\nself-loops', args.normalize))
@@ -159,12 +173,12 @@ if __name__ == '__main__':
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_contrastive_mpnn1_selfatt_belilovskyloss.pickle'), 'G2V\nself-att\nMPNN\nbelilovsky', args.normalize))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_contrastive_mpnn1_selfatt_mean.pickle'), 'G2V\nself-att\nMPNN\nmean', args.normalize))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_contrastive_mpnn1_selfatt_norm.pickle'), 'G2V\nself-att\nMPNN\nnorm', args.normalize))
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_contrastive_mpnn_GRUCell_no-selfatt.pickle'), 'G2V\nMPNN\nGRUCell\nnorm', args.normalize))  
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_contrastive_mpnn_GRUCell_no-selfatt.pickle'), 'G2V\nMPNN\nGRUCell\nnorm', args.normalize))   '''
 
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'learning_to_rank_regression_15000images_lessequalthan5objs_test.pickle'),
-                                             'learn-to-rank\nregression', args.normalize, distance='cosine'))      
-
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'random_baseline.pickle'), 'RAND', args.normalize))
+        # note: the following call does not receive the indexes because the file already contains filtered images
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir_already_filtered_objs,'learning_to_rank_regression_957images_lessequalthan5objs_test.pickle'),
+                                             'learn-to-rank\nregression', args.normalize, distance='cosine'))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'random_baseline.pickle'), 'RAND', args.normalize, indexes=scenes_idxs))
 
         #WITH PCA
         '''feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc1_avg_features_sd.pickle'), 'g_fc1\navg sd', args.normalize, how_many, args.set, 'pca', pca_dims=16))
@@ -221,7 +235,7 @@ if __name__ == '__main__':
 
     # RMAC #
     feats_orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
-        os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize, how_many, args.set))
+        os.path.join(feats_dir,'clevr_rmac_features_order.txt'), args.normalize, how_many, args.set, indexes=scenes_idxs))
 
     # RMAC WITH PCA #
     '''feats_orders.append(rmac_order.RMACOrder(os.path.join(feats_dir,'clevr_rmac_features.h5'),
@@ -241,7 +255,7 @@ if __name__ == '__main__':
     print('Initializing ground truth...')
     gt_orders = {}
     #gt_orders['graph'] = graphs_order.GraphsOrder(os.path.join(args.clevr_dir,'scenes','CLEVR_val_scenes.json'), args.graph_ground_truth, args.cpus)
-    gt_orders['graph-approx'] = graphs_approx_order.GraphsApproxOrder(args.clevr_dir, args.graph_ground_truth, how_many, args.set, args.cpus)
+    gt_orders['graph-approx'] = graphs_approx_order.GraphsApproxOrder(args.clevr_dir, args.graph_ground_truth, how_many, args.set, args.cpus, indexes=scenes_idxs)
     #gt_orders['states'] = states_order.StatesOrder(scene_json_filename, mode='fuzzy', ncpu=args.cpus)
     
     found_gt = False

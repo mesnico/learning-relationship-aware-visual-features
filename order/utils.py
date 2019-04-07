@@ -19,8 +19,8 @@ def max_min_length(orders_iterable):
     lengths = list(map(lambda o: o.length(), orders_iterable))
     return (max(lengths), min(lengths))
 
-def build_feat_dict(orders_iterable, query_idx, min_length=0, include_query=False):
-    orderings = [o.get(query_idx, include_query, min_length) for o in orders_iterable]
+def build_feat_dict(orders_iterable, query_idx, min_length=0, include_query=False, cache_fld='DOP_cache'):
+    orderings = [o.get(query_idx, include_query, min_length, cache_fld=cache_fld) for o in orders_iterable]
     names = [o.get_name() for o in orders_iterable]
         
     d = {n:o for n,o in zip(names, orderings)}

@@ -111,14 +111,14 @@ class ApproxGED(AproximatedEditDistance):
 class GraphsApproxOrder(OrderBase):
     graphs = None
 
-    def __init__(self, clevr_dir, gt='proportional', how_many=15000, st='test', ncpu=4):
+    def __init__(self, clevr_dir, gt='proportional', how_many=15000, st='test', ncpu=4, indexes=None):
         super().__init__()
 
         s = 'val' if st=='test' else st
         scene_file = os.path.join(clevr_dir, 'scenes', 'CLEVR_{}_scenes.json'.format(s))
         if not GraphsApproxOrder.graphs:
             print('Building graphs from JSON from {}...'.format(s))
-            GraphsApproxOrder.graphs = self.load_graphs(scene_file, how_many)
+            GraphsApproxOrder.graphs = self.load_graphs(scene_file, how_many, indexes)
         self.gt = gt
         self.st = st
         self.ncpu = ncpu
@@ -148,17 +148,17 @@ class GraphsApproxOrder(OrderBase):
             graphs.append(graph)
         return graphs'''
 
-    def load_graphs(self,scene_file,how_many):
+    def load_graphs(self,scene_file,how_many,indexes):
         clevr_scenes = json.load(open(scene_file))['scenes']
         clevr_scenes = clevr_scenes[:how_many]
+        if indexes is not None:
+            clevr_scenes = [clevr_scenes[i] for i in indexes]
         graphs = []
 
         for scene in clevr_scenes:
             graph = nx.MultiDiGraph()
             #build graph nodes for every object
             objs = scene['objects']
-            if len(objs) > 5:
-                continue
             for idx, obj in enumerate(objs):
                 graph.add_node(idx, color=obj['color'], shape=obj['shape'], material=obj['material'], size=obj['size'])
             
@@ -187,7 +187,7 @@ class GraphsApproxOrder(OrderBase):
         return tot_cost
 
     def compute_distances(self, query_img_index):
-        return parallel_distances('ged-approx-{}-{}'.format(self.gt, self.st), self.graphs, query_img_index, self.ged, kwargs={'node_weight_mode':self.gt}, ncpu=self.ncpu)
+        return parallel_distances('ged-approx-{}-{}-len{}'.format(self.gt, self.st, self.length()), self.graphs, query_img_index, self.ged, kwargs={'node_weight_mode':self.gt}, ncpu=self.ncpu)
         #query_graph = self.graphs[query_img_index]
         #return [self.ged(query_graph, g) for g in self.graphs]
 
