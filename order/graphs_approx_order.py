@@ -114,6 +114,7 @@ class GraphsApproxOrder(OrderBase):
     def __init__(self, clevr_dir, gt='proportional', how_many=15000, st='test', ncpu=4, indexes=None):
         super().__init__()
 
+        self.indexes = indexes
         s = 'val' if st=='test' else st
         scene_file = os.path.join(clevr_dir, 'scenes', 'CLEVR_{}_scenes.json'.format(s))
         if not GraphsApproxOrder.graphs:

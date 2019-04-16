@@ -22,13 +22,15 @@ parser.add_argument('--scale', type=float, default=2.0,
                     help='graphs scale factor')
 parser.add_argument('--set', type=str, default='test', choices=['test','train'],
                     help='which set should be used')
+parser.add_argument('--params', type=str,
+                    help='additional information to find the correct file')
 args = parser.parse_args()
 
 stats_dir = './stats'
 merged_stats = {}
 filenames = {}
-filenames['normalized'] = os.path.join(stats_dir, 'stats_normalized_{}-gt_{}.pickle'.format(args.ground_truth, args.set))
-filenames['no-normalized'] = os.path.join(stats_dir, 'stats_no-normalized_{}-gt_{}.pickle'.format(args.ground_truth, args.set))
+filenames['normalized'] = os.path.join(stats_dir, 'stats_normalized_{}-gt_{}__{}.pickle'.format(args.ground_truth, args.set, args.params))
+filenames['no-normalized'] = os.path.join(stats_dir, 'stats_no-normalized_{}-gt_{}__{}.pickle'.format(args.ground_truth, args.set, args.params))
 for stat_type, filename in filenames.items():
     if os.path.isfile(filename):
         f = open(filename,'rb')
@@ -75,9 +77,9 @@ def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True
             conf = st.t.ppf((1+confidence)/2, len(values)-1) * sem
             neg_conf = conf if mean>conf or can_be_negative else mean
             y_errors.append([neg_conf,conf])
-            if name == 'spearmanr' and ('fp original no prenorm' in feat.replace('\n',' ') or 'g_fc2' in feat or 'RMAC' in feat):
+            if name == 'spearmanr':
                 f = feat.replace('\n',' ')
-                print('{} {} -  = {} +- {}'.format(f, typekey, mean, conf))
+                #print('{} {} -  = {} +- {}'.format(f, typekey, mean, conf))
         all_means.append(mean_values)
         all_y_errors.append(y_errors)
         num_bars = len(feats)
@@ -100,7 +102,9 @@ def build_bar_graph(merged_stats, name, max_grouping=False, can_be_negative=True
         
         for ind, k in enumerate(feats_sorted_keys):
             #pdb.set_trace()
-            print('{}--{}: {:.2}; -{:.2}/+{:.2}'.format(name,k,max_mean[ind], yerr[0,ind], yerr[1,ind]))
+            if name=='spearmanr' or name=='recall-at-100':
+                f = k.replace('\n', ' ')
+                print('{}--{}: {:.2}; -{:.2}/+{:.2}'.format(name,f,max_mean[ind], yerr[0,ind], yerr[1,ind]))
 
     else:
         ax.legend(bars, list(merged_stats.keys()) )

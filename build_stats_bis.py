@@ -1,3 +1,13 @@
+############################################################################################
+# 
+#	NOTE: This is a branch version of build_stats.py that works directly on caches of already
+# 	filtered images.
+# 	Current build_stats.py can already deal with this filtering, by posterior filtering
+#	the images once the DOP cache file has been loaded.
+#	This version, however, is kept.
+#
+############################################################################################
+
 import pickle
 import os
 import numpy as np
@@ -149,6 +159,10 @@ if __name__ == '__main__':
         #feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_maxconv_features_fp.pickle'), 'conv\nmax fp', args.normalize))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_avgconv_features_fp.pickle'), 'conv\navg fp', args.normalize, indexes=scenes_idxs))
 
+        feats_orders.append(
+            rn_order.RNOrder(os.path.join(feats_dir, 'gfc0_avg_features_orig_fp.pickle'), 'g_fc0\navg fp',
+                             args.normalize, indexes=scenes_idxs))
+
         '''feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_gfc1_avg_features_sd.pickle'), 'g_fc1\navg sd', args.normalize))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'test_gfc1_max_features_sd.pickle'), 'g_fc1\nmax fp', args.normalize))'''
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'gfc2_avg_features_fp.pickle'), 'g_fc2\navg fp', args.normalize, indexes=scenes_idxs))
@@ -176,8 +190,12 @@ if __name__ == '__main__':
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_contrastive_mpnn_GRUCell_no-selfatt.pickle'), 'G2V\nMPNN\nGRUCell\nnorm', args.normalize))   '''
 
         # note: the following call does not receive the indexes because the file already contains filtered images
-        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir_already_filtered_objs,'learning_to_rank_regression_957images_lessequalthan5objs_test.pickle'),
-                                             'learn-to-rank\nregression', args.normalize, distance='cosine'))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir_already_filtered_objs,
+                                                          'learning_to_rank_rn_regression_957images_lessequalthan5objs_test.pickle'),
+                                             'learn-to-rank\nRN\nregression', args.normalize, distance='cosine'))
+        feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir_already_filtered_objs,
+                                                          'learning_to_rank_cnn_regression_957images_lessequalthan5objs_test.pickle'),
+                                             'learn-to-rank\nCNN\nregression', args.normalize, distance='cosine'))
         feats_orders.append(rn_order.RNOrder(os.path.join(feats_dir,'random_baseline.pickle'), 'RAND', args.normalize, indexes=scenes_idxs))
 
         #WITH PCA

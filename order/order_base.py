@@ -38,6 +38,10 @@ class OrderBase(ABC):
             with open(curr_cache_filename,'rb') as f:
                 print('Loading cached DOPs for {}'.format(curr_cache_filename))
                 self.__distances, self.__ordered_distances, self.__permuts = pickle.load(f)
+                if self.indexes is not None:
+                    self.__distances = [d for idx, d in enumerate(self.__distances) if idx in self.indexes]
+                    self.__ordered_distances = np.sort(self.__distances)
+                    self.__permuts = np.argsort(self.__distances, kind='mergesort')
 
         if not include_query:
             #delete first item in permuts and ordered_distances

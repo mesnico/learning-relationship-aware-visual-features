@@ -1,3 +1,14 @@
+############################################################################################
+# 
+#	NOTE: This is a branch version of visualize_images.py that works directly on caches
+#	of already filtered images.
+# 	I think it can be thrown away, since visualize_images.py already is able to deal
+#	with this, though if it is a bit more inefficient (there, the filtering is done on
+#	a later stage, after loading the cache with all the images distances).
+#
+############################################################################################
+
+
 import matplotlib
 matplotlib.use('Agg')    
 import matplotlib.pyplot as plt
@@ -112,8 +123,11 @@ if __name__ == '__main__':
     orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_node_dropout_bs64_features_test.pickle'), 'G2V\nnode_dropout', args.normalize, indexes=scenes_idxs))
     orders.append(rn_order.RNOrder(os.path.join(feats_dir,'G2V_contrastive_mpnn1_selfatt_norm.pickle'), 'G2V\nself-att\nMPNN\nnorm', args.normalize, indexes=scenes_idxs))
     # note: the following call does not receive the indexes because the file already contains filtered images
-    orders.append(rn_order.RNOrder(os.path.join(feats_dir_already_filtered_objs,'learning_to_rank_regression_957images_lessequalthan5objs_test.pickle'),
-                                             'learn-to-rank\nregression', args.normalize, distance='cosine'))
+    orders.append(rn_order.RNOrder(os.path.join(feats_dir_already_filtered_objs,'learning_to_rank_rn_regression_957images_lessequalthan5objs_test.pickle'),
+                                             'learn-to-rank\nRN\nregression', args.normalize, distance='cosine'))
+    orders.append(rn_order.RNOrder(os.path.join(feats_dir_already_filtered_objs,
+                                                'learning_to_rank_cnn_regression_957images_lessequalthan5objs_test.pickle'),
+                                   'learn-to-rank\nCNN\nregression', args.normalize, distance='cosine'))
     
 
     #build images

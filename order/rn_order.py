@@ -16,6 +16,7 @@ class RNOrder(OrderBase):
         self.normalize = normalize
         self.st = st
         self.distance = distance
+        self.indexes = indexes
         if normalize:
             self.rn_feats = utils.normalized(self.rn_feats, 1)
         self.name = name

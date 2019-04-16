@@ -11,6 +11,7 @@ class RMACOrder(OrderBase):
         self.st = st
         self.normalize = normalize
         self.preproc = preproc
+        self.indexes = indexes
         print('Loading RMAC features...')
         self.rmac_feats = self.load_rmac_features(rmac_file, rmac_order_filename, how_many, indexes)
         print('Loaded {} RMAC features ({} dims)'.format(self.rmac_feats.shape[0], self.rmac_feats.shape[1]))
